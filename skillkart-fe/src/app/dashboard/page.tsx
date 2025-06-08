@@ -372,7 +372,10 @@ export default function Dashboard() {
                         )}
                       </div>
                     </div>
-                    <Button className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium py-3 transition-all duration-200 shadow-lg hover:shadow-blue-500/25">
+                    <Button 
+                      onClick={() => router.push(`/roadmap/${roadmap.id}`)}
+                      className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium py-3 transition-all duration-200 shadow-lg hover:shadow-blue-500/25"
+                    >
                       Start Roadmap
                     </Button>
                   </CardContent>
@@ -448,6 +451,7 @@ export default function Dashboard() {
                     </div>
                     <Button 
                       variant="outline" 
+                      onClick={() => router.push(`/roadmap/${roadmap.id}`)}
                       className="w-full border-gray-600/50 text-gray-300 hover:bg-gray-700/50 hover:border-gray-500 transition-all duration-200 py-3 font-medium"
                     >
                       View Details

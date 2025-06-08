@@ -92,7 +92,7 @@ export function ProfileSetupModal({ open, onOpenChange, onComplete }: ProfileSet
       const token = localStorage.getItem('token')
       const user = JSON.parse(localStorage.getItem('user') || '{}')
 
-      const response = await fetch(`http://localhost:3001/users/${user.id}/profile`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users/${user.id}/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

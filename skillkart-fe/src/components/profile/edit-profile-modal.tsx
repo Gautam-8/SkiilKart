@@ -93,7 +93,7 @@ export default function EditProfileModal({
         throw new Error('No authentication token found')
       }
 
-      const response = await fetch(`http://localhost:3001/auth/profile`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
