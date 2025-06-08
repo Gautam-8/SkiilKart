@@ -42,7 +42,8 @@ let RoadmapsService = class RoadmapsService {
     }
     async getRoadmapById(id) {
         const roadmap = await this.roadmapRepository.findOne({
-            where: { id }
+            where: { id },
+            relations: ['steps']
         });
         if (!roadmap) {
             throw new common_1.NotFoundException('Roadmap not found');

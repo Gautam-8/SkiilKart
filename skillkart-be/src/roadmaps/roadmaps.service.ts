@@ -40,7 +40,8 @@ export class RoadmapsService {
   async getRoadmapById(id: number) {
     
     const roadmap = await this.roadmapRepository.findOne({
-      where: { id }
+      where: { id },
+      relations: ['steps']
     });
 
     if (!roadmap) {
