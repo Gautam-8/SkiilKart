@@ -170,27 +170,71 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
-      {/* Header */}
-      <header className="border-b border-gray-800/50 backdrop-blur-sm">
+      {/* Enhanced Navbar with Welcome Message & Stats */}
+      <header className="sticky top-0 z-40 border-b border-gray-800/50 backdrop-blur-md bg-gray-900/80">
         <div className="container mx-auto px-6">
-          <div className="flex items-center justify-between py-6">
-            <div className="flex items-center space-x-4">
-              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                <BookOpen className="h-6 w-6 text-white" />
+          <div className="flex items-center justify-between py-4">
+            <div className="flex items-center space-x-6">
+              <div className="flex items-center space-x-4">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg">
+                  <BookOpen className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-white">SkillKart</h1>
+                  <p className="text-gray-400 text-xs">Your Learning Journey</p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-2xl font-bold text-white">SkillKart</h1>
-                <p className="text-gray-400 text-sm">Your Learning Journey</p>
-              </div>
+              
+              {/* Welcome Message on Left */}
+              {user && isProfileComplete && (
+                <div className="hidden lg:block">
+                  <p className="text-lg font-semibold text-white">Welcome back, {user.name}! 👋</p>
+                  <p className="text-sm text-gray-400">Ready to continue learning?</p>
+                </div>
+              )}
             </div>
-            <div className="flex items-center space-x-4">
+            
+            <div className="flex items-center space-x-6">
+              {/* Inline Stats on Right */}
+              {user && isProfileComplete && (
+                <div className="hidden lg:flex items-center space-x-6">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center">
+                      <Clock className="h-4 w-4 text-blue-400" />
+                    </div>
+                    <span className="text-lg font-bold text-blue-400">{user.availableWeeklyHours}h</span>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
+                      <Target className="h-4 w-4 text-green-400" />
+                    </div>
+                    <span className="text-lg font-bold text-green-400">{user.interests?.length || 0}</span>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => router.push('/achievements')}>
+                    <div className="w-8 h-8 bg-yellow-500/20 rounded-full flex items-center justify-center">
+                      <Award className="h-4 w-4 text-yellow-400" />
+                    </div>
+                    <span className="text-lg font-bold text-yellow-400">0</span>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <div className="w-8 h-8 bg-purple-500/20 rounded-full flex items-center justify-center">
+                      <BookOpen className="h-4 w-4 text-purple-400" />
+                    </div>
+                    <span className="text-lg font-bold text-purple-400">{roadmaps.length}</span>
+                  </div>
+                </div>
+              )}
+              
               {user && (
                 <div className="flex items-center space-x-3">
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
                     onClick={() => setShowEditProfile(true)}
-                    className="text-gray-300 border-gray-600 hover:bg-gray-700"
+                    className="text-gray-300 hover:text-white hover:bg-gray-800/60 transition-all duration-200"
                   >
                     <User className="h-4 w-4 mr-2" />
                     {user.name}
@@ -199,7 +243,7 @@ export default function Dashboard() {
                     variant="outline"
                     size="sm"
                     onClick={handleLogout}
-                    className="text-gray-300 border-gray-600 hover:bg-gray-700"
+                    className="text-gray-400 border-gray-600/50 hover:bg-gray-800/60 hover:text-white hover:border-gray-500 transition-all duration-200"
                   >
                     Logout
                   </Button>
@@ -210,52 +254,61 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <div className="container mx-auto px-6 py-12">
-        {/* Welcome Section */}
-        {user && (
-          <div className="mb-12 text-center">
-            <h2 className="text-4xl font-bold text-white mb-4">
-              Welcome back, {user.name}! 👋
-            </h2>
-            <p className="text-xl text-gray-300 mb-8">
-              Ready to continue your learning journey?
-            </p>
-            
-            {isProfileComplete && (
-              <div className="bg-gray-800/50 rounded-xl p-6 max-w-2xl mx-auto">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-                  <div>
-                    <div className="text-2xl font-bold text-blue-400">{user.availableWeeklyHours}h</div>
-                    <div className="text-sm text-gray-400">Weekly Study Time</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-green-400">{user.interests?.length || 0}</div>
-                    <div className="text-sm text-gray-400">Interests</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-purple-400">{roadmaps.length}</div>
-                    <div className="text-sm text-gray-400">Available Roadmaps</div>
-                  </div>
+      <div className="container mx-auto px-6 py-8">
+
+        {/* Your Progress & Achievements Section - Now First */}
+        {user && isProfileComplete && (
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-3xl font-bold text-white flex items-center">
+                <div className="w-8 h-8 bg-yellow-600 rounded-xl flex items-center justify-center mr-4">
+                  <Award className="h-5 w-5 text-white" />
                 </div>
-              </div>
-            )}
+                Your Progress & Achievements
+              </h2>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push('/achievements')}
+                className="border-gray-600/50 text-gray-300 hover:bg-gray-700/50 hover:border-gray-500 hover:text-white transition-all duration-200"
+              >
+                <Award className="h-4 w-4 mr-2" />
+                View All Achievements
+              </Button>
+            </div>
+            <GamificationStats userId={user.id} />
           </div>
         )}
 
-        {/* Recommended Roadmaps Section */}
-        {isProfileComplete && recommendedList.length > 0 && (
+        {/* All Roadmaps Section - Recommended First */}
+        {isProfileComplete && (
           <div className="mb-12">
-            <h2 className="text-2xl font-bold text-white mb-8 flex items-center">
-              <div className="w-8 h-8 bg-blue-600/20 rounded-lg flex items-center justify-center mr-3">
-                <Target className="h-5 w-5 text-blue-400" />
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-3xl font-bold text-white flex items-center">
+                <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center mr-4">
+                  <BookOpen className="h-5 w-5 text-white" />
+                </div>
+                Learning Roadmaps
+              </h2>
+              <div className="text-sm text-gray-400">
+                {roadmaps.length} total • {recommendedList.length} recommended for you
               </div>
-              Recommended for You
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {/* Render Recommended Roadmaps First */}
               {recommendedList.map((roadmap) => {
                 const personalizedRoadmap = calculatePersonalizedTimeline(roadmap)
                 return (
-                  <Card key={roadmap.id} className="bg-gray-800/50 border-gray-700/50 backdrop-blur-sm hover:bg-gray-800/60 hover:border-blue-500/50 transition-all duration-300 shadow-lg h-full flex flex-col">
+                  <Card key={`recommended-${roadmap.id}`} className="relative group bg-gradient-to-br from-blue-600/20 to-blue-700/10 border-blue-500/40 backdrop-blur-sm hover:from-blue-600/30 hover:to-blue-700/20 hover:border-blue-400/60 transition-all duration-300 shadow-lg hover:shadow-blue-500/20 h-full flex flex-col">
+                    
+                    {/* Recommended Badge */}
+                    <div className="absolute -top-2 -right-2 z-10">
+                      <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-medium px-3 py-1 rounded-full shadow-lg">
+                        ⭐ Recommended
+                      </div>
+                    </div>
+                    
                     <CardHeader className="pb-4">
                       <div className="flex justify-between items-start mb-3">
                         <Badge 
@@ -270,29 +323,29 @@ export default function Dashboard() {
                           {roadmap.difficulty}
                         </Badge>
                         <div className="text-right">
-                          <div className="flex items-center text-sm text-gray-400 font-medium">
+                          <div className="flex items-center text-sm text-gray-300 font-medium">
                             <Clock className="h-3 w-3 mr-1" />
                             {personalizedRoadmap.personalizedDuration}
                           </div>
-                          <div className="flex items-center text-xs text-gray-500 mt-1">
+                          <div className="flex items-center text-xs text-gray-400 mt-1">
                             <Calendar className="h-3 w-3 mr-1" />
                             {personalizedRoadmap.estimatedWeeks} weeks for you
                           </div>
                         </div>
                       </div>
-                      <CardTitle className="text-white text-xl font-bold leading-tight">
+                      <CardTitle className="text-white text-xl font-bold leading-tight group-hover:text-blue-100 transition-colors">
                         {roadmap.title}
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="flex-1 flex flex-col">
-                      <p className="text-gray-300 text-sm mb-6 leading-relaxed flex-1">
+                      <p className="text-gray-200 text-sm mb-6 leading-relaxed flex-1">
                         {roadmap.description}
                       </p>
                       <div className="mb-6">
-                        <p className="text-xs text-gray-500 mb-3 font-medium uppercase tracking-wide">Skills you'll learn</p>
+                        <p className="text-xs text-gray-400 mb-3 font-medium uppercase tracking-wide">Skills you'll learn</p>
                         <div className="flex flex-wrap gap-2">
                           {roadmap.skills.slice(0, 3).map((skill, index) => (
-                            <Badge key={index} variant="secondary" className="text-xs px-3 py-1 bg-gray-700/50 text-gray-300 border-gray-600/50">
+                            <Badge key={index} variant="secondary" className="text-xs px-3 py-1 bg-blue-700/30 text-blue-200 border-blue-500/50">
                               {skill}
                             </Badge>
                           ))}
@@ -305,33 +358,21 @@ export default function Dashboard() {
                       </div>
                       <Button 
                         onClick={() => router.push(`/roadmap/${roadmap.id}`)}
-                        className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium py-3 transition-all duration-200 shadow-lg hover:shadow-blue-500/25"
+                        className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium py-3 transition-all duration-200 shadow-lg hover:shadow-blue-500/30"
                       >
                         <Sparkles className="h-4 w-4 mr-2" />
-                        Start Personalized Roadmap
+                        Start Learning Journey
                       </Button>
                     </CardContent>
                   </Card>
                 )
               })}
-            </div>
-          </div>
-        )}
-
-        {/* All Available Roadmaps */}
-        {isProfileComplete && (
-          <div className="mb-12">
-            <h2 className="text-2xl font-bold text-white mb-8 flex items-center">
-              <div className="w-8 h-8 bg-gray-600/20 rounded-lg flex items-center justify-center mr-3">
-                <BookOpen className="h-5 w-5 text-gray-400" />
-              </div>
-              All Roadmaps
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-              {roadmaps.map((roadmap) => {
+              
+              {/* Render Remaining Roadmaps */}
+              {roadmaps.filter(roadmap => !recommendedList.some(rec => rec.id === roadmap.id)).map((roadmap) => {
                 const personalizedRoadmap = calculatePersonalizedTimeline(roadmap)
                 return (
-                  <Card key={roadmap.id} className="bg-gray-800/30 border-gray-700/30 backdrop-blur-sm hover:bg-gray-800/40 hover:border-gray-600/50 transition-all duration-300 shadow-md h-full flex flex-col">
+                  <Card key={roadmap.id} className="bg-gray-800/40 border-gray-700/40 backdrop-blur-sm hover:bg-gray-800/60 hover:border-gray-600/60 transition-all duration-300 shadow-md hover:shadow-lg h-full flex flex-col">
                     <CardHeader className="pb-4">
                       <div className="flex justify-between items-start mb-3">
                         <Badge 
@@ -356,26 +397,26 @@ export default function Dashboard() {
                           </div>
                         </div>
                       </div>
-                      <CardTitle className="text-white text-xl font-bold leading-tight">
+                      <CardTitle className="text-white text-lg font-bold leading-tight">
                         {roadmap.title}
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="flex-1 flex flex-col">
-                      <p className="text-gray-300 text-sm mb-6 leading-relaxed flex-1">
+                      <p className="text-gray-300 text-sm mb-4 leading-relaxed flex-1 line-clamp-3">
                         {roadmap.description}
                       </p>
                       {roadmap.skills && roadmap.skills.length > 0 && (
                         <div className="mb-6">
-                          <p className="text-xs text-gray-500 mb-3 font-medium uppercase tracking-wide">Skills you'll learn</p>
-                          <div className="flex flex-wrap gap-2">
-                            {roadmap.skills.slice(0, 3).map((skill, index) => (
-                              <Badge key={index} variant="secondary" className="text-xs px-3 py-1 bg-gray-700/50 text-gray-300 border-gray-600/50">
+                          <p className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wide">Skills</p>
+                          <div className="flex flex-wrap gap-1">
+                            {roadmap.skills.slice(0, 2).map((skill, index) => (
+                              <Badge key={index} variant="secondary" className="text-xs px-2 py-1 bg-gray-700/50 text-gray-300 border-gray-600/50">
                                 {skill}
                               </Badge>
                             ))}
-                            {roadmap.skills.length > 3 && (
-                              <Badge variant="secondary" className="text-xs px-3 py-1 bg-gray-600/20 text-gray-400 border-gray-500/30">
-                                +{roadmap.skills.length - 3} more
+                            {roadmap.skills.length > 2 && (
+                              <Badge variant="secondary" className="text-xs px-2 py-1 bg-gray-600/20 text-gray-400 border-gray-500/30">
+                                +{roadmap.skills.length - 2}
                               </Badge>
                             )}
                           </div>
@@ -384,10 +425,10 @@ export default function Dashboard() {
                       <Button 
                         variant="outline" 
                         onClick={() => router.push(`/roadmap/${roadmap.id}`)}
-                        className="w-full border-gray-600/50 text-gray-300 hover:bg-gray-700/50 hover:border-gray-500 transition-all duration-200 py-3 font-medium"
+                        className="w-full border-gray-600/50 text-gray-300 hover:bg-gray-700/50 hover:border-gray-500 hover:text-white transition-all duration-200 py-2.5 font-medium"
                       >
                         <ChevronRight className="h-4 w-4 mr-2" />
-                        View Personalized Details
+                        View Details
                       </Button>
                     </CardContent>
                   </Card>
@@ -397,35 +438,27 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Gamification Section */}
-        {isProfileComplete && user && (
-          <div className="mb-12">
-            <h2 className="text-2xl font-bold text-white mb-8 flex items-center">
-              <div className="w-8 h-8 bg-yellow-600/20 rounded-lg flex items-center justify-center mr-3">
-                <Award className="h-5 w-5 text-yellow-400" />
-              </div>
-              Your Progress & Achievements
-            </h2>
-            <GamificationStats userId={user.id} />
-          </div>
-        )}
-
         {/* Profile Incomplete Prompt */}
         {!isProfileComplete && user && (
-          <Card className="bg-gray-800 border-gray-700">
-            <CardContent className="p-8 text-center">
-              <Target className="h-12 w-12 text-gray-600 mx-auto mb-4" />
-              <p className="text-gray-400 mb-4">
-                Complete your profile to see personalized roadmap recommendations
-              </p>
-              <Button 
-                onClick={() => setShowProfileSetup(true)}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                Complete Profile Setup
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="py-12">
+            <Card className="bg-gradient-to-br from-gray-800/60 to-gray-800/40 border-gray-700/50 backdrop-blur-sm max-w-2xl mx-auto">
+              <CardContent className="p-8 text-center">
+                <div className="w-16 h-16 bg-gray-700/50 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Target className="h-8 w-8 text-gray-400" />
+                </div>
+                <h3 className="text-xl font-semibold text-white mb-3">Complete Your Profile</h3>
+                <p className="text-gray-400 mb-6 leading-relaxed">
+                  Help us personalize your learning experience by completing your profile. We'll recommend the best roadmaps based on your interests and goals.
+                </p>
+                <Button 
+                  onClick={() => setShowProfileSetup(true)}
+                  className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-8 py-3 font-medium"
+                >
+                  Complete Profile Setup
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         )}
       </div>
 
