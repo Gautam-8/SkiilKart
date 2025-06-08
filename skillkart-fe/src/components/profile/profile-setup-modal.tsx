@@ -139,7 +139,7 @@ export function ProfileSetupModal({ open, onOpenChange, onComplete }: ProfileSet
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-gray-900 border-gray-700 sm:max-w-lg">
+      <DialogContent className="bg-gray-900 border-gray-700 sm:max-w-lg scrollbar-modern">
         <DialogHeader>
           <DialogTitle className="text-white text-2xl font-semibold text-center">
             Complete Your Profile

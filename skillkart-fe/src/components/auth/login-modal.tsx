@@ -68,7 +68,7 @@ export function LoginModal({ open, onOpenChange, onSwitchToRegister }: LoginModa
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-gray-900 border-gray-700 sm:max-w-md">
+      <DialogContent className="bg-gray-900 border-gray-700 sm:max-w-md scrollbar-modern">
         <DialogHeader>
           <DialogTitle className="text-white text-2xl font-semibold text-center">Welcome Back</DialogTitle>
         </DialogHeader>

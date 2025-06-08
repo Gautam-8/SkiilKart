@@ -54,7 +54,7 @@ export function RegisterModal({ open, onOpenChange, onSwitchToLogin }: RegisterM
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-gray-900 border-gray-700">
+      <DialogContent className="bg-gray-900 border-gray-700 scrollbar-modern">
         <DialogHeader>
           <DialogTitle className="text-white">Join SkillKart</DialogTitle>
         </DialogHeader>

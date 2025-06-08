@@ -131,8 +131,8 @@ export default function EditProfileModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] bg-gray-900 border-gray-700 overflow-hidden">
-        <div className="max-h-[80vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-track-gray-800 scrollbar-thumb-gray-600 hover:scrollbar-thumb-gray-500">
+              <DialogContent className="sm:max-w-2xl max-h-[90vh] bg-gray-900 border-gray-700 overflow-hidden scrollbar-modern">
+          <div className="max-h-[80vh] overflow-y-auto pr-2 scrollbar-modern">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-white flex items-center">
             <User className="h-6 w-6 mr-2" />
