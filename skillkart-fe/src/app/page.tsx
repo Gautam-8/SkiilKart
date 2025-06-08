@@ -30,7 +30,7 @@ export default function Home() {
     {
       icon: <Trophy className="h-8 w-8 text-yellow-500" />,
       title: "Gamification",
-      description: "Earn XP points, unlock badges, and track your progress with streaks and achievements."
+      description: "Earn XP points, unlock badges, and track your progress with learning streaks."
     },
     {
       icon: <Clock className="h-8 w-8 text-indigo-500" />,

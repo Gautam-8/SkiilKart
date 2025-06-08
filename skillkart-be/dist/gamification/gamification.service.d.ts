@@ -28,6 +28,10 @@ export declare class GamificationService {
         createdAt: Date;
         updatedAt: Date;
     }[]>;
+    calculateUserStreaks(userId: number): Promise<{
+        currentStreak: number;
+        longestStreak: number;
+    }>;
     getGamificationData(userId: number, user: User): Promise<{
         totalXP: number;
         level: number;

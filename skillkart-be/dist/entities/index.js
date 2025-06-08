@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UserBadge = exports.Badge = exports.XPLog = exports.Comment = exports.Thread = exports.ResourceType = exports.Resource = exports.ProgressStatus = exports.UserRoadmapProgress = exports.UserRoadmap = exports.RoadmapStep = exports.Roadmap = exports.UserRole = exports.User = void 0;
+exports.UserAchievement = exports.Achievement = exports.UserBadge = exports.Badge = exports.XPLog = exports.Comment = exports.Thread = exports.ResourceType = exports.Resource = exports.ProgressStatus = exports.UserRoadmapProgress = exports.UserRoadmap = exports.RoadmapStep = exports.Roadmap = exports.UserRole = exports.User = void 0;
 var user_entity_1 = require("./user.entity");
 Object.defineProperty(exports, "User", { enumerable: true, get: function () { return user_entity_1.User; } });
 Object.defineProperty(exports, "UserRole", { enumerable: true, get: function () { return user_entity_1.UserRole; } });
@@ -26,4 +26,8 @@ var badge_entity_1 = require("./badge.entity");
 Object.defineProperty(exports, "Badge", { enumerable: true, get: function () { return badge_entity_1.Badge; } });
 var user_badge_entity_1 = require("./user-badge.entity");
 Object.defineProperty(exports, "UserBadge", { enumerable: true, get: function () { return user_badge_entity_1.UserBadge; } });
+var achievement_entity_1 = require("./achievement.entity");
+Object.defineProperty(exports, "Achievement", { enumerable: true, get: function () { return achievement_entity_1.Achievement; } });
+var user_achievement_entity_1 = require("./user-achievement.entity");
+Object.defineProperty(exports, "UserAchievement", { enumerable: true, get: function () { return user_achievement_entity_1.UserAchievement; } });
 //# sourceMappingURL=index.js.map

@@ -128,6 +128,76 @@ export class GamificationService {
     return badgesWithStatus;
   }
 
+  // Calculate user streaks based on XP log activity
+  async calculateUserStreaks(userId: number) {
+    const xpLogs = await this.xpLogRepository.find({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+    });
+
+    if (xpLogs.length === 0) {
+      return { currentStreak: 0, longestStreak: 0 };
+    }
+
+    // Group XP logs by date (YYYY-MM-DD format)
+    const activityDates = new Set<string>();
+    xpLogs.forEach(log => {
+      const dateStr = log.createdAt.toISOString().split('T')[0];
+      activityDates.add(dateStr);
+    });
+
+    // Convert to sorted array of date strings
+    const sortedDates = Array.from(activityDates).sort().reverse();
+
+    if (sortedDates.length === 0) {
+      return { currentStreak: 0, longestStreak: 0 };
+    }
+
+    // Calculate current streak (from today backwards)
+    const today = new Date().toISOString().split('T')[0];
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    
+    let currentStreak = 0;
+    
+    // Check if user was active today or yesterday (for grace period)
+    if (sortedDates[0] === today || sortedDates[0] === yesterday) {
+      currentStreak = 1;
+      
+      // Count consecutive days backwards
+      for (let i = 1; i < sortedDates.length; i++) {
+        const currentDate = new Date(sortedDates[i-1]);
+        const nextDate = new Date(sortedDates[i]);
+        const dayDifference = (currentDate.getTime() - nextDate.getTime()) / (1000 * 60 * 60 * 24);
+        
+        if (dayDifference === 1) {
+          currentStreak++;
+        } else {
+          break;
+        }
+      }
+    }
+
+    // Calculate longest streak
+    let longestStreak = 0;
+    let tempStreak = 1;
+
+    for (let i = 1; i < sortedDates.length; i++) {
+      const currentDate = new Date(sortedDates[i-1]);
+      const nextDate = new Date(sortedDates[i]);
+      const dayDifference = (currentDate.getTime() - nextDate.getTime()) / (1000 * 60 * 60 * 24);
+      
+      if (dayDifference === 1) {
+        tempStreak++;
+      } else {
+        longestStreak = Math.max(longestStreak, tempStreak);
+        tempStreak = 1;
+      }
+    }
+    longestStreak = Math.max(longestStreak, tempStreak);
+
+    return { currentStreak, longestStreak };
+  }
+
   // GET /gamification - Combined gamification data for frontend
   async getGamificationData(userId: number, user: User) {
     console.log(`[GAMIFICATION] Getting gamification data for userId=${userId}`);
@@ -144,6 +214,10 @@ export class GamificationService {
     const earnedBadges = allBadges.filter(badge => badge.earned);
     console.log(`[GAMIFICATION] Earned badges:`, earnedBadges);
 
+    // Calculate streaks
+    const streakData = await this.calculateUserStreaks(userId);
+    console.log(`[GAMIFICATION] Streak data:`, streakData);
+
     // Calculate level based on XP (every 1000 XP = 1 level)
     const level = Math.floor(xpData.totalXP / 1000) + 1;
     const xpInCurrentLevel = xpData.totalXP % 1000;
@@ -153,8 +227,8 @@ export class GamificationService {
       totalXP: xpData.totalXP,
       level,
       xpToNextLevel,
-      currentStreak: 0, // TODO: Implement streak tracking
-      longestStreak: 0, // TODO: Implement streak tracking
+      currentStreak: streakData.currentStreak,
+      longestStreak: streakData.longestStreak,
       badges: earnedBadges.map(badge => ({
         id: badge.id,
         name: badge.name,
@@ -163,7 +237,7 @@ export class GamificationService {
         rarity: 'common', // Default rarity
         earnedAt: badge.earnedAt || new Date().toISOString(),
       })),
-      achievements: [], // TODO: Implement achievements
+      achievements: [], // TODO: Implement achievements system
       xpLogs: xpData.xpLogs,
     };
 

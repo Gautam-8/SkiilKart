@@ -9,3 +9,5 @@ export { Comment } from './comment.entity';
 export { XPLog } from './xp-log.entity';
 export { Badge } from './badge.entity';
 export { UserBadge } from './user-badge.entity';
+export { Achievement } from './achievement.entity';
+export { UserAchievement } from './user-achievement.entity';
