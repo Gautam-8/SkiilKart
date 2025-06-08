@@ -13,7 +13,23 @@ export declare class ThreadsService {
     private roadmapStepRepository;
     constructor(threadRepository: Repository<Thread>, commentRepository: Repository<Comment>, roadmapRepository: Repository<Roadmap>, roadmapStepRepository: Repository<RoadmapStep>);
     createThread(createThreadDto: CreateThreadDto, user: User): Promise<Thread>;
-    getThreadsByRoadmap(roadmapId: number): Promise<Thread[]>;
+    getThreadsByRoadmap(roadmapId: number): Promise<{
+        author: any;
+        replies: any[];
+        likes: number;
+        hasLiked: boolean;
+        id: number;
+        roadmapId: number;
+        stepId: number;
+        title: string;
+        userId: number;
+        user: any;
+        roadmap: any;
+        step: any;
+        comments: any[];
+        createdAt: Date;
+        updatedAt: Date;
+    }[]>;
     createComment(threadId: number, createCommentDto: CreateCommentDto, user: User): Promise<Comment>;
     getCommentsByThread(threadId: number): Promise<Comment[]>;
 }

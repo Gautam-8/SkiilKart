@@ -17,6 +17,15 @@ export class Roadmap {
   @Column()
   totalWeeks: number;
 
+  @Column()
+  difficulty: string;
+
+  @Column()
+  duration: string;
+
+  @Column('text', { array: true, nullable: true })
+  skills: string[];
+
   @OneToMany('RoadmapStep', 'roadmap')
   steps: any[];
 

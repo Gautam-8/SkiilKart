@@ -17,6 +17,8 @@ let RoadmapStep = class RoadmapStep {
     weekNumber;
     title;
     description;
+    type;
+    duration;
     roadmap;
     resources;
     userProgress;
@@ -45,6 +47,14 @@ __decorate([
     (0, typeorm_1.Column)('text'),
     __metadata("design:type", String)
 ], RoadmapStep.prototype, "description", void 0);
+__decorate([
+    (0, typeorm_1.Column)(),
+    __metadata("design:type", String)
+], RoadmapStep.prototype, "type", void 0);
+__decorate([
+    (0, typeorm_1.Column)(),
+    __metadata("design:type", String)
+], RoadmapStep.prototype, "duration", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)('Roadmap', 'steps'),
     (0, typeorm_1.JoinColumn)({ name: 'roadmapId' }),

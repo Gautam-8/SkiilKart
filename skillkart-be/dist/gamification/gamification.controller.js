@@ -33,6 +33,9 @@ let GamificationController = class GamificationController {
     async getUserBadges(req) {
         return this.gamificationService.getUserBadges(req.user.id, req.user);
     }
+    async getGamificationData(req) {
+        return this.gamificationService.getGamificationData(req.user.id, req.user);
+    }
 };
 exports.GamificationController = GamificationController;
 __decorate([
@@ -60,6 +63,15 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], GamificationController.prototype, "getUserBadges", null);
+__decorate([
+    (0, common_1.Get)('gamification'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_entity_1.UserRole.LEARNER),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], GamificationController.prototype, "getGamificationData", null);
 exports.GamificationController = GamificationController = __decorate([
     (0, common_1.Controller)(),
     __metadata("design:paramtypes", [gamification_service_1.GamificationService])

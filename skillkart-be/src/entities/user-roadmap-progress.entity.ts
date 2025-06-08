@@ -1,8 +1,9 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 
 export enum ProgressStatus {
-  IN_PROGRESS = 'In Progress',
-  COMPLETED = 'Completed',
+  NOT_STARTED = 'NOT_STARTED',
+  IN_PROGRESS = 'IN_PROGRESS', 
+  COMPLETED = 'COMPLETED',
 }
 
 @Entity('user_roadmap_progress')
@@ -19,7 +20,7 @@ export class UserRoadmapProgress {
   @Column({
     type: 'enum',
     enum: ProgressStatus,
-    default: ProgressStatus.IN_PROGRESS,
+    default: ProgressStatus.NOT_STARTED,
   })
   status: ProgressStatus;
 

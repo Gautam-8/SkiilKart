@@ -13,8 +13,9 @@ exports.UserRoadmapProgress = exports.ProgressStatus = void 0;
 const typeorm_1 = require("typeorm");
 var ProgressStatus;
 (function (ProgressStatus) {
-    ProgressStatus["IN_PROGRESS"] = "In Progress";
-    ProgressStatus["COMPLETED"] = "Completed";
+    ProgressStatus["NOT_STARTED"] = "NOT_STARTED";
+    ProgressStatus["IN_PROGRESS"] = "IN_PROGRESS";
+    ProgressStatus["COMPLETED"] = "COMPLETED";
 })(ProgressStatus || (exports.ProgressStatus = ProgressStatus = {}));
 let UserRoadmapProgress = class UserRoadmapProgress {
     id;
@@ -43,7 +44,7 @@ __decorate([
     (0, typeorm_1.Column)({
         type: 'enum',
         enum: ProgressStatus,
-        default: ProgressStatus.IN_PROGRESS,
+        default: ProgressStatus.NOT_STARTED,
     }),
     __metadata("design:type", String)
 ], UserRoadmapProgress.prototype, "status", void 0);

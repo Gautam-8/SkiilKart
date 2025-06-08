@@ -17,4 +17,21 @@ export declare class GamificationController {
         createdAt: Date;
         updatedAt: Date;
     }[]>;
+    getGamificationData(req: any): Promise<{
+        totalXP: number;
+        level: number;
+        xpToNextLevel: number;
+        currentStreak: number;
+        longestStreak: number;
+        badges: {
+            id: number;
+            name: string;
+            description: string;
+            iconType: string;
+            rarity: string;
+            earnedAt: string | Date;
+        }[];
+        achievements: never[];
+        xpLogs: import("../entities").XPLog[];
+    }>;
 }

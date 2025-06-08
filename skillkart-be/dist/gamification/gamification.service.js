@@ -33,15 +33,17 @@ let GamificationService = class GamificationService {
         this.userRoadmapProgressRepository = userRoadmapProgressRepository;
     }
     async awardXPForStepCompletion(userId, stepId) {
+        console.log(`[GAMIFICATION] Awarding XP: userId=${userId}, stepId=${stepId}`);
         const points = 10;
         const xpLog = this.xpLogRepository.create({
             userId,
             action: `Completed step ${stepId}`,
             points,
         });
-        await this.xpLogRepository.save(xpLog);
+        const savedXpLog = await this.xpLogRepository.save(xpLog);
+        console.log(`[GAMIFICATION] XP awarded successfully:`, savedXpLog);
         await this.checkAndAwardBadges(userId);
-        return xpLog;
+        return savedXpLog;
     }
     async checkAndAwardBadges(userId) {
         const completedSteps = await this.userRoadmapProgressRepository.count({
@@ -104,6 +106,39 @@ let GamificationService = class GamificationService {
             earnedAt: userBadges.find(ub => ub.badgeId === badge.id)?.createdAt || null,
         }));
         return badgesWithStatus;
+    }
+    async getGamificationData(userId, user) {
+        console.log(`[GAMIFICATION] Getting gamification data for userId=${userId}`);
+        if (user.role !== user_entity_1.UserRole.LEARNER) {
+            throw new common_1.ForbiddenException('Only learners can view gamification data');
+        }
+        const xpData = await this.getUserXP(userId, user);
+        console.log(`[GAMIFICATION] XP data:`, xpData);
+        const allBadges = await this.getUserBadges(userId, user);
+        const earnedBadges = allBadges.filter(badge => badge.earned);
+        console.log(`[GAMIFICATION] Earned badges:`, earnedBadges);
+        const level = Math.floor(xpData.totalXP / 1000) + 1;
+        const xpInCurrentLevel = xpData.totalXP % 1000;
+        const xpToNextLevel = 1000 - xpInCurrentLevel;
+        const gamificationData = {
+            totalXP: xpData.totalXP,
+            level,
+            xpToNextLevel,
+            currentStreak: 0,
+            longestStreak: 0,
+            badges: earnedBadges.map(badge => ({
+                id: badge.id,
+                name: badge.name,
+                description: badge.description,
+                iconType: 'award',
+                rarity: 'common',
+                earnedAt: badge.earnedAt || new Date().toISOString(),
+            })),
+            achievements: [],
+            xpLogs: xpData.xpLogs,
+        };
+        console.log(`[GAMIFICATION] Returning gamification data:`, gamificationData);
+        return gamificationData;
     }
     async initializeDefaultBadges() {
         const defaultBadges = [

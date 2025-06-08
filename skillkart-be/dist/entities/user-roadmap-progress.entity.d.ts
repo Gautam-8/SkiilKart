@@ -1,6 +1,7 @@
 export declare enum ProgressStatus {
-    IN_PROGRESS = "In Progress",
-    COMPLETED = "Completed"
+    NOT_STARTED = "NOT_STARTED",
+    IN_PROGRESS = "IN_PROGRESS",
+    COMPLETED = "COMPLETED"
 }
 export declare class UserRoadmapProgress {
     id: number;

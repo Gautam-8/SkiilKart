@@ -28,5 +28,22 @@ export declare class GamificationService {
         createdAt: Date;
         updatedAt: Date;
     }[]>;
+    getGamificationData(userId: number, user: User): Promise<{
+        totalXP: number;
+        level: number;
+        xpToNextLevel: number;
+        currentStreak: number;
+        longestStreak: number;
+        badges: {
+            id: number;
+            name: string;
+            description: string;
+            iconType: string;
+            rarity: string;
+            earnedAt: string | Date;
+        }[];
+        achievements: never[];
+        xpLogs: XPLog[];
+    }>;
     initializeDefaultBadges(): Promise<void>;
 }

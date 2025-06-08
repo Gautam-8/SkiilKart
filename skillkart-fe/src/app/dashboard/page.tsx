@@ -8,6 +8,7 @@ import { BookOpen, User, Clock, Target, TrendingUp, Award } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { ProfileSetupModal } from '@/components/profile/profile-setup-modal'
 import EditProfileModal from '@/components/profile/edit-profile-modal'
+import { GamificationStats } from '@/components/gamification/gamification-stats'
 
 interface User {
   id: number
@@ -23,69 +24,19 @@ interface Roadmap {
   id: number
   title: string
   description: string
-  category: string
+  skillCategory: string
   duration: string
   difficulty: 'Beginner' | 'Intermediate' | 'Advanced'
   totalWeeks: number
   skills: string[]
 }
 
-// Static roadmap data
-const STATIC_ROADMAPS: Roadmap[] = [
-  {
-    id: 1,
-    title: 'Web Development Fundamentals',
-    description: 'Learn HTML, CSS, JavaScript, and modern web development practices',
-    category: 'Web Development',
-    duration: '12 weeks',
-    difficulty: 'Beginner',
-    totalWeeks: 12,
-    skills: ['HTML', 'CSS', 'JavaScript', 'React', 'Node.js']
-  },
-  {
-    id: 2,
-    title: 'Frontend Development Mastery',
-    description: 'Master modern frontend frameworks and advanced UI/UX concepts',
-    category: 'Frontend Development',
-    duration: '10 weeks',
-    difficulty: 'Intermediate',
-    totalWeeks: 10,
-    skills: ['React', 'TypeScript', 'Tailwind CSS', 'Next.js', 'State Management']
-  },
-  {
-    id: 3,
-    title: 'UI/UX Design Complete Course',
-    description: 'Learn user experience design, prototyping, and design systems',
-    category: 'UI/UX Design',
-    duration: '8 weeks',
-    difficulty: 'Beginner',
-    totalWeeks: 8,
-    skills: ['Figma', 'Design Principles', 'User Research', 'Prototyping', 'Design Systems']
-  },
-  {
-    id: 4,
-    title: 'Data Science Foundations',
-    description: 'Python, statistics, machine learning, and data visualization',
-    category: 'Data Science',
-    duration: '16 weeks',
-    difficulty: 'Intermediate',
-    totalWeeks: 16,
-    skills: ['Python', 'Pandas', 'NumPy', 'Machine Learning', 'Data Visualization']
-  },
-  {
-    id: 5,
-    title: 'Mobile Development with React Native',
-    description: 'Build cross-platform mobile apps with React Native',
-    category: 'Mobile Development',
-    duration: '14 weeks',
-    difficulty: 'Intermediate',
-    totalWeeks: 14,
-    skills: ['React Native', 'JavaScript', 'Mobile UI', 'API Integration', 'App Store Deployment']
-  }
-]
+
 
 export default function Dashboard() {
   const [user, setUser] = useState<User | null>(null)
+  const [roadmaps, setRoadmaps] = useState<Roadmap[]>([])
+  const [loading, setLoading] = useState(true)
   const [showProfileSetup, setShowProfileSetup] = useState(false)
   const [showEditProfile, setShowEditProfile] = useState(false)
   const router = useRouter()
@@ -94,12 +45,12 @@ export default function Dashboard() {
   const getRecommendedRoadmaps = (userInterests: string[] = []): Roadmap[] => {
     const interestKeywords = userInterests.map(interest => interest.toLowerCase())
     
-    return STATIC_ROADMAPS.filter(roadmap => {
+    return roadmaps.filter(roadmap => {
       const roadmapKeywords = [
         roadmap.title.toLowerCase(),
-        roadmap.category.toLowerCase(),
+        roadmap.skillCategory.toLowerCase(),
         roadmap.description.toLowerCase(),
-        ...roadmap.skills.map(skill => skill.toLowerCase())
+        ...(roadmap.skills || []).map(skill => skill.toLowerCase())
       ]
       
       return interestKeywords.some(interest => 
@@ -111,22 +62,46 @@ export default function Dashboard() {
   const recommendedRoadmaps = user ? getRecommendedRoadmaps(user.interests) : []
 
   useEffect(() => {
-    // Get user from localStorage
-    const userData = localStorage.getItem('user')
-    const token = localStorage.getItem('token')
-    
-    if (!userData || !token) {
-      router.push('/')
-      return
+    const loadData = async () => {
+      // Get user from localStorage
+      const userData = localStorage.getItem('user')
+      const token = localStorage.getItem('token')
+      
+      if (!userData || !token) {
+        router.push('/')
+        return
+      }
+
+      const parsedUser = JSON.parse(userData)
+      setUser(parsedUser)
+
+      // Check if profile is incomplete (no interests, goal, or weekly hours)
+      if (!parsedUser.interests || !parsedUser.goal || !parsedUser.availableWeeklyHours) {
+        setShowProfileSetup(true)
+      }
+
+      // Fetch roadmaps from backend
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/roadmaps`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+
+        if (response.ok) {
+          const roadmapsData = await response.json()
+          setRoadmaps(roadmapsData)
+        } else {
+          console.error('Failed to fetch roadmaps')
+        }
+      } catch (error) {
+        console.error('Error fetching roadmaps:', error)
+      } finally {
+        setLoading(false)
+      }
     }
 
-    const parsedUser = JSON.parse(userData)
-    setUser(parsedUser)
-
-    // Check if profile is incomplete (no interests, goal, or weekly hours)
-    if (!parsedUser.interests || !parsedUser.goal || !parsedUser.availableWeeklyHours) {
-      setShowProfileSetup(true)
-    }
+    loadData()
   }, [router])
 
   const handleLogout = () => {
@@ -141,7 +116,7 @@ export default function Dashboard() {
     // This will happen automatically due to the reactive nature of recommendedRoadmaps
   }
 
-  if (!user) {
+  if (!user || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
@@ -406,7 +381,7 @@ export default function Dashboard() {
               All Roadmaps
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-              {STATIC_ROADMAPS.map((roadmap) => (
+              {roadmaps.map((roadmap) => (
                 <Card key={roadmap.id} className="bg-gray-800/30 border-gray-700/30 backdrop-blur-sm hover:bg-gray-800/40 hover:border-gray-600/50 transition-all duration-300 shadow-md h-full flex flex-col">
                   <CardHeader className="pb-4">
                     <div className="flex justify-between items-start mb-3">
@@ -434,21 +409,23 @@ export default function Dashboard() {
                     <p className="text-gray-300 text-sm mb-6 leading-relaxed flex-1">
                       {roadmap.description}
                     </p>
-                    <div className="mb-6">
-                      <p className="text-xs text-gray-500 mb-3 font-medium uppercase tracking-wide">Skills you'll learn</p>
-                      <div className="flex flex-wrap gap-2">
-                        {roadmap.skills.slice(0, 3).map((skill, index) => (
-                          <Badge key={index} variant="secondary" className="text-xs px-3 py-1 bg-gray-700/50 text-gray-300 border-gray-600/50">
-                            {skill}
-                          </Badge>
-                        ))}
-                        {roadmap.skills.length > 3 && (
-                          <Badge variant="secondary" className="text-xs px-3 py-1 bg-gray-600/20 text-gray-400 border-gray-500/30">
-                            +{roadmap.skills.length - 3} more
-                          </Badge>
-                        )}
+                    {roadmap.skills && roadmap.skills.length > 0 && (
+                      <div className="mb-6">
+                        <p className="text-xs text-gray-500 mb-3 font-medium uppercase tracking-wide">Skills you'll learn</p>
+                        <div className="flex flex-wrap gap-2">
+                          {roadmap.skills.slice(0, 3).map((skill, index) => (
+                            <Badge key={index} variant="secondary" className="text-xs px-3 py-1 bg-gray-700/50 text-gray-300 border-gray-600/50">
+                              {skill}
+                            </Badge>
+                          ))}
+                          {roadmap.skills.length > 3 && (
+                            <Badge variant="secondary" className="text-xs px-3 py-1 bg-gray-600/20 text-gray-400 border-gray-500/30">
+                              +{roadmap.skills.length - 3} more
+                            </Badge>
+                          )}
+                        </div>
                       </div>
-                    </div>
+                    )}
                     <Button 
                       variant="outline" 
                       onClick={() => router.push(`/roadmap/${roadmap.id}`)}
@@ -460,6 +437,19 @@ export default function Dashboard() {
                 </Card>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Gamification Section */}
+        {isProfileComplete && (
+          <div className="mb-12">
+            <h2 className="text-2xl font-bold text-white mb-8 flex items-center">
+              <div className="w-8 h-8 bg-yellow-600/20 rounded-lg flex items-center justify-center mr-3">
+                <Award className="h-5 w-5 text-yellow-400" />
+              </div>
+              Your Progress & Achievements
+            </h2>
+            <GamificationStats userId={user.id} />
           </div>
         )}
 

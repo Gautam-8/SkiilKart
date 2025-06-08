@@ -37,7 +37,7 @@ export function RegisterModal({ open, onOpenChange, onSwitchToLogin }: RegisterM
       const data = await response.json()
 
       if (response.ok) {
-        localStorage.setItem('token', data.token)
+        localStorage.setItem('token', data.access_token)
         localStorage.setItem('user', JSON.stringify(data.user))
         toast.success('Welcome to SkillKart!')
         onOpenChange(false)

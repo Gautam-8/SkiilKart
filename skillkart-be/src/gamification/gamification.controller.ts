@@ -31,4 +31,12 @@ export class GamificationController {
   async getUserBadges(@Request() req) {
     return this.gamificationService.getUserBadges(req.user.id, req.user);
   }
+
+  // GET /gamification (Learners only) - Combined gamification data
+  @Get('gamification')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.LEARNER)
+  async getGamificationData(@Request() req) {
+    return this.gamificationService.getGamificationData(req.user.id, req.user);
+  }
 } 

@@ -4,6 +4,8 @@ export declare class RoadmapStep {
     weekNumber: number;
     title: string;
     description: string;
+    type: string;
+    duration: string;
     roadmap: any;
     resources: any[];
     userProgress: any[];

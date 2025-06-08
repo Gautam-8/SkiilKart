@@ -10,93 +10,7 @@ import { CreateUserRoadmapDto } from './dto/create-user-roadmap.dto';
 import { UpdateStepProgressDto } from './dto/update-step-progress.dto';
 import { GamificationService } from '../gamification/gamification.service';
 
-// Static roadmap data for common skills
-const STATIC_ROADMAPS = [
-  {
-    id: 1,
-    title: 'Complete Web Development Bootcamp',
-    skillCategory: 'Web Development',
-    description: 'Learn full-stack web development from scratch with HTML, CSS, JavaScript, React, and Node.js',
-    totalWeeks: 12
-  },
-  {
-    id: 2,
-    title: 'Frontend Development Mastery',
-    skillCategory: 'Frontend Development',
-    description: 'Master modern frontend development with React, TypeScript, and advanced CSS',
-    totalWeeks: 8
-  },
-  {
-    id: 3,
-    title: 'Backend Development Fundamentals',
-    skillCategory: 'Backend Development',
-    description: 'Build robust server-side applications with Node.js, databases, and APIs',
-    totalWeeks: 10
-  },
-  {
-    id: 4,
-    title: 'Full Stack Development Journey',
-    skillCategory: 'Full Stack Development',
-    description: 'Complete full-stack mastery from frontend to backend deployment',
-    totalWeeks: 16
-  },
-  {
-    id: 5,
-    title: 'UI/UX Design Fundamentals',
-    skillCategory: 'UI/UX Design',
-    description: 'Learn design principles, user research, prototyping, and design systems',
-    totalWeeks: 10
-  },
-  {
-    id: 6,
-    title: 'Data Science with Python',
-    skillCategory: 'Data Science',
-    description: 'Master data analysis, machine learning, and visualization with Python',
-    totalWeeks: 14
-  },
-  {
-    id: 7,
-    title: 'Machine Learning Engineering',
-    skillCategory: 'Machine Learning',
-    description: 'Build and deploy ML models from scratch to production',
-    totalWeeks: 12
-  },
-  {
-    id: 8,
-    title: 'Mobile App Development',
-    skillCategory: 'Mobile Development',
-    description: 'Build native mobile apps with React Native and Flutter',
-    totalWeeks: 10
-  },
-  {
-    id: 9,
-    title: 'DevOps Engineering Pipeline',
-    skillCategory: 'DevOps',
-    description: 'Master CI/CD, containerization, cloud deployment, and infrastructure automation',
-    totalWeeks: 12
-  },
-  {
-    id: 10,
-    title: 'Game Development with Unity',
-    skillCategory: 'Game Development',
-    description: 'Create 2D and 3D games from concept to published product',
-    totalWeeks: 14
-  },
-  {
-    id: 11,
-    title: 'Cybersecurity Specialist',
-    skillCategory: 'Cybersecurity',
-    description: 'Learn ethical hacking, security analysis, and threat protection',
-    totalWeeks: 16
-  },
-  {
-    id: 12,
-    title: 'Cloud Computing Mastery',
-    skillCategory: 'Cloud Computing',
-    description: 'Master AWS, Azure, and cloud architecture patterns',
-    totalWeeks: 12
-  }
-];
+
 
 @Injectable()
 export class RoadmapsService {
@@ -113,14 +27,43 @@ export class RoadmapsService {
     private gamificationService: GamificationService,
   ) {}
 
-  // GET /roadmaps/skill/:skillCategory - Return static roadmaps for now
+  // GET /roadmaps - Return all roadmaps from database
+  async getAllRoadmaps() {
+    return await this.roadmapRepository.find();
+  }
+
+  // GET /roadmaps/:id - Return single roadmap by ID
+  async getRoadmapById(id: number) {
+    const roadmap = await this.roadmapRepository.findOne({
+      where: { id }
+    });
+
+    if (!roadmap) {
+      throw new NotFoundException('Roadmap not found');
+    }
+
+    return roadmap;
+  }
+
+  // GET /roadmaps/skill/:skillCategory - Return roadmaps by skill category
   async getRoadmapsBySkill(skillCategory: string) {
-    // Return static roadmaps matching the skill category
-    const matchingRoadmaps = STATIC_ROADMAPS.filter(
-      roadmap => roadmap.skillCategory.toLowerCase() === skillCategory.toLowerCase()
-    );
+    return await this.roadmapRepository.find({
+      where: { skillCategory }
+    });
+  }
+
+  // GET /roadmaps/:id/steps - Return roadmap steps
+  async getRoadmapSteps(roadmapId: number) {
+    const steps = await this.roadmapStepRepository.find({
+      where: { roadmapId },
+      order: { weekNumber: 'ASC', id: 'ASC' }
+    });
     
-    return matchingRoadmaps;
+    // Map weekNumber to week for frontend compatibility
+    return steps.map(step => ({
+      ...step,
+      week: step.weekNumber
+    }));
   }
 
   // POST /user-roadmaps
@@ -132,8 +75,8 @@ export class RoadmapsService {
 
     const { roadmapId } = createUserRoadmapDto;
 
-    // Check if roadmap exists in static data
-    const roadmap = STATIC_ROADMAPS.find(r => r.id === roadmapId);
+    // Check if roadmap exists in database
+    const roadmap = await this.roadmapRepository.findOne({ where: { id: roadmapId } });
     if (!roadmap) {
       throw new NotFoundException('Roadmap not found');
     }
@@ -169,17 +112,55 @@ export class RoadmapsService {
       throw new NotFoundException('User roadmap not found');
     }
 
-    // Get roadmap details from static data
-    const roadmap = STATIC_ROADMAPS.find(r => r.id === userRoadmap.roadmapId);
+    // Get roadmap details from database
+    const roadmap = await this.roadmapRepository.findOne({ where: { id: userRoadmap.roadmapId } });
     if (!roadmap) {
       throw new NotFoundException('Roadmap not found');
     }
 
-    // For now, return basic structure - can be enhanced later
+    // Get user's progress for this roadmap
+    const progress = await this.userRoadmapProgressRepository.find({
+      where: { userRoadmapId: userRoadmap.id }
+    });
+
     return {
       ...userRoadmap,
       roadmap,
-      steps: [], // Can add static steps later if needed
+      progress,
+    };
+  }
+
+  // GET /user-roadmaps/roadmap/:roadmapId - Get user progress by roadmap ID
+  async getUserRoadmapByRoadmapId(roadmapId: number, userId: number) {
+    console.log(`[PROGRESS] Retrieving progress: userId=${userId}, roadmapId=${roadmapId}`);
+    
+    // First find the user roadmap by roadmap ID and user ID
+    const userRoadmap = await this.userRoadmapRepository.findOne({
+      where: { roadmapId, userId },
+    });
+
+    if (!userRoadmap) {
+      console.log(`[PROGRESS] No user roadmap found, returning empty progress`);
+      // Return empty progress if user hasn't started this roadmap
+      return {
+        roadmapId,
+        userId,
+        progress: []
+      };
+    }
+
+    console.log(`[PROGRESS] Found userRoadmap with id=${userRoadmap.id}`);
+
+    // Get user's progress for this roadmap
+    const progress = await this.userRoadmapProgressRepository.find({
+      where: { userRoadmapId: userRoadmap.id }
+    });
+
+    console.log(`[PROGRESS] Retrieved ${progress.length} progress entries:`, progress);
+
+    return {
+      ...userRoadmap,
+      progress,
     };
   }
 
@@ -219,6 +200,65 @@ export class RoadmapsService {
         { userRoadmapId, stepId },
         { status },
       );
+    }
+
+    // Award XP if step was completed
+    if (status === ProgressStatus.COMPLETED) {
+      await this.gamificationService.awardXPForStepCompletion(userId, stepId);
+    }
+
+    return { success: true, status };
+  }
+
+  // PATCH /user-roadmaps/roadmap/:roadmapId/step-progress - Update step progress by roadmap ID
+  async updateStepProgressByRoadmapId(
+    roadmapId: number,
+    updateStepProgressDto: UpdateStepProgressDto,
+    userId: number,
+  ) {
+    const { stepId, status } = updateStepProgressDto;
+    console.log(`[PROGRESS] Updating progress: userId=${userId}, roadmapId=${roadmapId}, stepId=${stepId}, status=${status}`);
+
+    // Find user roadmap by roadmap ID and user ID
+    let userRoadmap = await this.userRoadmapRepository.findOne({
+      where: { roadmapId, userId },
+    });
+
+    // If user hasn't started this roadmap yet, create it
+    if (!userRoadmap) {
+      console.log(`[PROGRESS] Creating new user roadmap for userId=${userId}, roadmapId=${roadmapId}`);
+      userRoadmap = this.userRoadmapRepository.create({
+        userId,
+        roadmapId,
+        startedAt: new Date(),
+      });
+      await this.userRoadmapRepository.save(userRoadmap);
+      console.log(`[PROGRESS] Created userRoadmap with id=${userRoadmap.id}`);
+    }
+
+    // Find existing progress
+    const existingProgress = await this.userRoadmapProgressRepository.findOne({
+      where: { userRoadmapId: userRoadmap.id, stepId },
+    });
+
+    if (!existingProgress) {
+      // Create new progress if doesn't exist
+      console.log(`[PROGRESS] Creating new progress entry`);
+      const progress = this.userRoadmapProgressRepository.create({
+        userRoadmapId: userRoadmap.id,
+        stepId,
+        status,
+      });
+      const savedProgress = await this.userRoadmapProgressRepository.save(progress);
+      console.log(`[PROGRESS] Created progress entry:`, savedProgress);
+    } else {
+      // Update existing progress
+      console.log(`[PROGRESS] Updating existing progress entry`);
+      await this.userRoadmapProgressRepository.update(
+        { userRoadmapId: userRoadmap.id, stepId },
+        { status },
+      );
+      console.log(`[PROGRESS] Updated progress to status=${status}`);
     }
 
     // Award XP if step was completed

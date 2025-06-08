@@ -14,33 +14,57 @@ export declare class RoadmapsService {
     private userRoadmapProgressRepository;
     private gamificationService;
     constructor(roadmapRepository: Repository<Roadmap>, roadmapStepRepository: Repository<RoadmapStep>, userRoadmapRepository: Repository<UserRoadmap>, userRoadmapProgressRepository: Repository<UserRoadmapProgress>, gamificationService: GamificationService);
-    getRoadmapsBySkill(skillCategory: string): Promise<{
+    getAllRoadmaps(): Promise<Roadmap[]>;
+    getRoadmapById(id: number): Promise<Roadmap>;
+    getRoadmapsBySkill(skillCategory: string): Promise<Roadmap[]>;
+    getRoadmapSteps(roadmapId: number): Promise<{
+        week: number;
         id: number;
+        roadmapId: number;
+        weekNumber: number;
         title: string;
-        skillCategory: string;
         description: string;
-        totalWeeks: number;
+        type: string;
+        duration: string;
+        roadmap: any;
+        resources: any[];
+        userProgress: any[];
+        threads: any[];
+        createdAt: Date;
+        updatedAt: Date;
     }[]>;
     startUserRoadmap(userId: number, createUserRoadmapDto: CreateUserRoadmapDto, user: User): Promise<UserRoadmap>;
     getUserRoadmap(id: number, userId: number): Promise<{
-        roadmap: {
-            id: number;
-            title: string;
-            skillCategory: string;
-            description: string;
-            totalWeeks: number;
-        };
-        steps: never[];
+        roadmap: Roadmap;
+        progress: UserRoadmapProgress[];
         id: number;
         userId: number;
         roadmapId: number;
         startedAt: Date;
         user: any;
-        progress: any[];
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
+    getUserRoadmapByRoadmapId(roadmapId: number, userId: number): Promise<{
+        roadmapId: number;
+        userId: number;
+        progress: never[];
+    } | {
+        progress: UserRoadmapProgress[];
+        id: number;
+        userId: number;
+        roadmapId: number;
+        startedAt: Date;
+        user: any;
+        roadmap: any;
         createdAt: Date;
         updatedAt: Date;
     }>;
     updateStepProgress(userRoadmapId: number, updateStepProgressDto: UpdateStepProgressDto, userId: number): Promise<{
+        success: boolean;
+        status: ProgressStatus;
+    }>;
+    updateStepProgressByRoadmapId(roadmapId: number, updateStepProgressDto: UpdateStepProgressDto, userId: number): Promise<{
         success: boolean;
         status: ProgressStatus;
     }>;

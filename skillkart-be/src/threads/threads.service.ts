@@ -75,10 +75,20 @@ export class ThreadsService {
 
     const threads = await this.threadRepository.find({
       where: { roadmapId },
+      relations: ['user', 'comments', 'comments.user'],
       order: { createdAt: 'DESC' },
     });
 
-    return threads;
+    return threads.map(thread => ({
+      ...thread,
+      author: thread.user,
+      replies: thread.comments.map(comment => ({
+        ...comment,
+        author: comment.user
+      })),
+      likes: 0,
+      hasLiked: false
+    }));
   }
 
   // POST /comments (Learners only)

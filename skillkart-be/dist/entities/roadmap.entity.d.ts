@@ -4,6 +4,9 @@ export declare class Roadmap {
     skillCategory: string;
     description: string;
     totalWeeks: number;
+    difficulty: string;
+    duration: string;
+    skills: string[];
     steps: any[];
     userRoadmaps: any[];
     threads: any[];

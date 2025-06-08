@@ -17,6 +17,9 @@ let Roadmap = class Roadmap {
     skillCategory;
     description;
     totalWeeks;
+    difficulty;
+    duration;
+    skills;
     steps;
     userRoadmaps;
     threads;
@@ -44,6 +47,18 @@ __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", Number)
 ], Roadmap.prototype, "totalWeeks", void 0);
+__decorate([
+    (0, typeorm_1.Column)(),
+    __metadata("design:type", String)
+], Roadmap.prototype, "difficulty", void 0);
+__decorate([
+    (0, typeorm_1.Column)(),
+    __metadata("design:type", String)
+], Roadmap.prototype, "duration", void 0);
+__decorate([
+    (0, typeorm_1.Column)('text', { array: true, nullable: true }),
+    __metadata("design:type", Array)
+], Roadmap.prototype, "skills", void 0);
 __decorate([
     (0, typeorm_1.OneToMany)('RoadmapStep', 'roadmap'),
     __metadata("design:type", Array)

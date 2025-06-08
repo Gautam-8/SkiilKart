@@ -17,6 +17,12 @@ export class RoadmapStep {
   @Column('text')
   description: string;
 
+  @Column()
+  type: string;
+
+  @Column()
+  duration: string;
+
   @ManyToOne('Roadmap', 'steps')
   @JoinColumn({ name: 'roadmapId' })
   roadmap: any;
