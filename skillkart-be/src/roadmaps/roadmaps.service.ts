@@ -7,6 +7,8 @@ import { UserRoadmap } from '../entities/user-roadmap.entity';
 import { UserRoadmapProgress, ProgressStatus } from '../entities/user-roadmap-progress.entity';
 import { User, UserRole } from '../entities/user.entity';
 import { CreateUserRoadmapDto } from './dto/create-user-roadmap.dto';
+import { CreateRoadmapDto } from './dto/create-roadmap.dto';
+import { CreateRoadmapStepDto } from './dto/create-roadmap-step.dto';
 import { UpdateStepProgressDto } from './dto/update-step-progress.dto';
 import { GamificationService } from '../gamification/gamification.service';
 
@@ -29,11 +31,14 @@ export class RoadmapsService {
 
   // GET /roadmaps - Return all roadmaps from database
   async getAllRoadmaps() {
-    return await this.roadmapRepository.find();
+    return await this.roadmapRepository.find({
+      relations: ['steps']
+    });
   }
 
   // GET /roadmaps/:id - Return single roadmap by ID
   async getRoadmapById(id: number) {
+    
     const roadmap = await this.roadmapRepository.findOne({
       where: { id }
     });
@@ -45,25 +50,14 @@ export class RoadmapsService {
     return roadmap;
   }
 
-  // GET /roadmaps/skill/:skillCategory - Return roadmaps by skill category
-  async getRoadmapsBySkill(skillCategory: string) {
-    return await this.roadmapRepository.find({
-      where: { skillCategory }
-    });
-  }
-
   // GET /roadmaps/:id/steps - Return roadmap steps
   async getRoadmapSteps(roadmapId: number) {
     const steps = await this.roadmapStepRepository.find({
       where: { roadmapId },
-      order: { weekNumber: 'ASC', id: 'ASC' }
+      order: { id: 'ASC' }
     });
     
-    // Map weekNumber to week for frontend compatibility
-    return steps.map(step => ({
-      ...step,
-      week: step.weekNumber
-    }));
+    return steps;
   }
 
   // POST /user-roadmaps
@@ -267,5 +261,42 @@ export class RoadmapsService {
     }
 
     return { success: true, status };
+  }
+
+  // POST /roadmaps - Create new roadmap (Admin only)
+  async createRoadmap(createRoadmapDto: CreateRoadmapDto, user: User) {
+    // Only admins can create roadmaps
+    if (user.role !== UserRole.ADMIN) {
+      throw new ForbiddenException('Only admins can create roadmaps');
+    }
+
+    // Create roadmap
+    const roadmap = this.roadmapRepository.create(createRoadmapDto);
+    await this.roadmapRepository.save(roadmap);
+
+    return roadmap;
+  }
+
+  // POST /roadmaps/:id/steps - Create new roadmap step (Admin only)
+  async createRoadmapStep(roadmapId: number, createRoadmapStepDto: CreateRoadmapStepDto, user: User) {
+    // Only admins can create roadmap steps
+    if (user.role !== UserRole.ADMIN) {
+      throw new ForbiddenException('Only admins can create roadmap steps');
+    }
+
+    // Verify roadmap exists
+    const roadmap = await this.roadmapRepository.findOne({ where: { id: roadmapId } });
+    if (!roadmap) {
+      throw new NotFoundException('Roadmap not found');
+    }
+
+    // Override roadmapId to ensure consistency
+    const stepData = { ...createRoadmapStepDto, roadmapId };
+    
+    // Create roadmap step
+    const step = this.roadmapStepRepository.create(stepData);
+    await this.roadmapStepRepository.save(step);
+
+    return step;
   }
 } 

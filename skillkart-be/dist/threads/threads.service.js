@@ -82,8 +82,8 @@ let ThreadsService = class ThreadsService {
         }));
     }
     async createComment(threadId, createCommentDto, user) {
-        if (user.role !== user_entity_1.UserRole.LEARNER) {
-            throw new common_1.ForbiddenException('Only learners can create comments');
+        if (user.role !== user_entity_1.UserRole.LEARNER && user.role !== user_entity_1.UserRole.ADMIN) {
+            throw new common_1.ForbiddenException('Only learners and admins can create comments');
         }
         const thread = await this.threadRepository.findOne({
             where: { id: threadId },

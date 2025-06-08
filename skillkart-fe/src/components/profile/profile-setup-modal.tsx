@@ -92,8 +92,8 @@ export function ProfileSetupModal({ open, onOpenChange, onComplete }: ProfileSet
       const token = localStorage.getItem('token')
       const user = JSON.parse(localStorage.getItem('user') || '{}')
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users/${user.id}/profile`, {
-        method: 'PUT',
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users/profile`, {
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`

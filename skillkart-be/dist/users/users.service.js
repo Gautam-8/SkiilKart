@@ -29,8 +29,8 @@ let UsersService = class UsersService {
         if (!user) {
             throw new common_1.NotFoundException('User not found');
         }
-        if (user.role !== user_entity_1.UserRole.LEARNER) {
-            throw new common_1.NotFoundException('Profile update only available for learners');
+        if (user.role !== user_entity_1.UserRole.LEARNER && user.role !== user_entity_1.UserRole.ADMIN) {
+            throw new common_1.NotFoundException('Profile update only available for learners and admins');
         }
         await this.userRepository.update(userId, updateProfileDto);
         const updatedUser = await this.userRepository.findOne({
@@ -39,15 +39,8 @@ let UsersService = class UsersService {
         if (!updatedUser) {
             throw new common_1.NotFoundException('User not found after update');
         }
-        return {
-            id: updatedUser.id,
-            name: updatedUser.name,
-            email: updatedUser.email,
-            role: updatedUser.role,
-            interests: updatedUser.interests,
-            goal: updatedUser.goal,
-            availableWeeklyHours: updatedUser.availableWeeklyHours,
-        };
+        const { password, ...userResponse } = updatedUser;
+        return userResponse;
     }
 };
 exports.UsersService = UsersService;

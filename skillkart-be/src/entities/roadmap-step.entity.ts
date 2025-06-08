@@ -9,9 +9,6 @@ export class RoadmapStep {
   roadmapId: number;
 
   @Column()
-  weekNumber: number;
-
-  @Column()
   title: string;
 
   @Column('text')
@@ -20,8 +17,11 @@ export class RoadmapStep {
   @Column()
   type: string;
 
-  @Column()
-  duration: string;
+  @Column({ nullable: true })
+  estimatedHours: number;
+
+  @Column({ nullable: true })
+  learningObjectives: string;
 
   @ManyToOne('Roadmap', 'steps')
   @JoinColumn({ name: 'roadmapId' })

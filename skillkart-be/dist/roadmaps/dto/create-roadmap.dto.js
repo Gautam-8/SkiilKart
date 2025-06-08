@@ -9,33 +9,36 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UpdateProfileDto = void 0;
+exports.CreateRoadmapDto = exports.RoadmapDifficulty = void 0;
 const class_validator_1 = require("class-validator");
-class UpdateProfileDto {
-    name;
-    interests;
-    goal;
-    availableWeeklyHours;
+var RoadmapDifficulty;
+(function (RoadmapDifficulty) {
+    RoadmapDifficulty["BEGINNER"] = "Beginner";
+    RoadmapDifficulty["INTERMEDIATE"] = "Intermediate";
+    RoadmapDifficulty["ADVANCED"] = "Advanced";
+})(RoadmapDifficulty || (exports.RoadmapDifficulty = RoadmapDifficulty = {}));
+class CreateRoadmapDto {
+    title;
+    description;
+    difficulty;
+    skills;
 }
-exports.UpdateProfileDto = UpdateProfileDto;
+exports.CreateRoadmapDto = CreateRoadmapDto;
 __decorate([
     (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
-], UpdateProfileDto.prototype, "name", void 0);
+], CreateRoadmapDto.prototype, "title", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateRoadmapDto.prototype, "description", void 0);
+__decorate([
+    (0, class_validator_1.IsEnum)(RoadmapDifficulty),
+    __metadata("design:type", String)
+], CreateRoadmapDto.prototype, "difficulty", void 0);
 __decorate([
     (0, class_validator_1.IsArray)(),
-    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ each: true }),
     __metadata("design:type", Array)
-], UpdateProfileDto.prototype, "interests", void 0);
-__decorate([
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsOptional)(),
-    __metadata("design:type", String)
-], UpdateProfileDto.prototype, "goal", void 0);
-__decorate([
-    (0, class_validator_1.IsNumber)(),
-    (0, class_validator_1.IsOptional)(),
-    __metadata("design:type", Number)
-], UpdateProfileDto.prototype, "availableWeeklyHours", void 0);
-//# sourceMappingURL=update-profile.dto.js.map
+], CreateRoadmapDto.prototype, "skills", void 0);
+//# sourceMappingURL=create-roadmap.dto.js.map

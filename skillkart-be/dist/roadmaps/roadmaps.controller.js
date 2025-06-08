@@ -16,6 +16,8 @@ exports.RoadmapsController = void 0;
 const common_1 = require("@nestjs/common");
 const roadmaps_service_1 = require("./roadmaps.service");
 const create_user_roadmap_dto_1 = require("./dto/create-user-roadmap.dto");
+const create_roadmap_dto_1 = require("./dto/create-roadmap.dto");
+const create_roadmap_step_dto_1 = require("./dto/create-roadmap-step.dto");
 const update_step_progress_dto_1 = require("./dto/update-step-progress.dto");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const roles_guard_1 = require("../auth/guards/roles.guard");
@@ -26,11 +28,14 @@ let RoadmapsController = class RoadmapsController {
     constructor(roadmapsService) {
         this.roadmapsService = roadmapsService;
     }
+    async createRoadmap(createRoadmapDto, req) {
+        return this.roadmapsService.createRoadmap(createRoadmapDto, req.user);
+    }
+    async createRoadmapStep(id, createRoadmapStepDto, req) {
+        return this.roadmapsService.createRoadmapStep(parseInt(id), createRoadmapStepDto, req.user);
+    }
     async getAllRoadmaps() {
         return this.roadmapsService.getAllRoadmaps();
-    }
-    async getRoadmapsBySkill(skillCategory) {
-        return this.roadmapsService.getRoadmapsBySkill(skillCategory);
     }
     async getRoadmapById(id) {
         return this.roadmapsService.getRoadmapById(parseInt(id));
@@ -56,6 +61,27 @@ let RoadmapsController = class RoadmapsController {
 };
 exports.RoadmapsController = RoadmapsController;
 __decorate([
+    (0, common_1.Post)('roadmaps'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_entity_1.UserRole.ADMIN),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [create_roadmap_dto_1.CreateRoadmapDto, Object]),
+    __metadata("design:returntype", Promise)
+], RoadmapsController.prototype, "createRoadmap", null);
+__decorate([
+    (0, common_1.Post)('roadmaps/:id/steps'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_entity_1.UserRole.ADMIN),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, create_roadmap_step_dto_1.CreateRoadmapStepDto, Object]),
+    __metadata("design:returntype", Promise)
+], RoadmapsController.prototype, "createRoadmapStep", null);
+__decorate([
     (0, common_1.Get)('roadmaps'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)(user_entity_1.UserRole.LEARNER, user_entity_1.UserRole.ADMIN),
@@ -63,15 +89,6 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], RoadmapsController.prototype, "getAllRoadmaps", null);
-__decorate([
-    (0, common_1.Get)('roadmaps/skill/:skillCategory'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(user_entity_1.UserRole.LEARNER, user_entity_1.UserRole.ADMIN),
-    __param(0, (0, common_1.Param)('skillCategory')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Promise)
-], RoadmapsController.prototype, "getRoadmapsBySkill", null);
 __decorate([
     (0, common_1.Get)('roadmaps/:id'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),

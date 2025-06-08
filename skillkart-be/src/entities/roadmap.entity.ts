@@ -9,19 +9,10 @@ export class Roadmap {
   title: string;
 
   @Column()
-  skillCategory: string;
-
-  @Column()
   description: string;
 
   @Column()
-  totalWeeks: number;
-
-  @Column()
   difficulty: string;
-
-  @Column()
-  duration: string;
 
   @Column('text', { array: true, nullable: true })
   skills: string[];

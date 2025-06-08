@@ -12,7 +12,7 @@ export class UsersController {
 
   @Patch('profile')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.LEARNER)
+  @Roles(UserRole.LEARNER, UserRole.ADMIN)
   async updateProfile(@Request() req, @Body() updateProfileDto: UpdateProfileDto) {
     return this.usersService.updateProfile(req.user.id, updateProfileDto);
   }

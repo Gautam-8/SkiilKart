@@ -20,9 +20,9 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
-    // Only allow learners to update profile
-    if (user.role !== UserRole.LEARNER) {
-      throw new NotFoundException('Profile update only available for learners');
+    // Allow learners and admins to update profile
+    if (user.role !== UserRole.LEARNER && user.role !== UserRole.ADMIN) {
+      throw new NotFoundException('Profile update only available for learners and admins');
     }
 
     await this.userRepository.update(userId, updateProfileDto);
@@ -35,14 +35,8 @@ export class UsersService {
       throw new NotFoundException('User not found after update');
     }
 
-    return {
-      id: updatedUser.id,
-      name: updatedUser.name,
-      email: updatedUser.email,
-      role: updatedUser.role,
-      interests: updatedUser.interests,
-      goal: updatedUser.goal,
-      availableWeeklyHours: updatedUser.availableWeeklyHours,
-    };
+    // Remove password and other sensitive fields from response
+    const { password, ...userResponse } = updatedUser;
+    return userResponse;
   }
 } 

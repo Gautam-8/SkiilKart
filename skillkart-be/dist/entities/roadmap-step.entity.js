@@ -14,11 +14,11 @@ const typeorm_1 = require("typeorm");
 let RoadmapStep = class RoadmapStep {
     id;
     roadmapId;
-    weekNumber;
     title;
     description;
     type;
-    duration;
+    estimatedHours;
+    learningObjectives;
     roadmap;
     resources;
     userProgress;
@@ -37,10 +37,6 @@ __decorate([
 ], RoadmapStep.prototype, "roadmapId", void 0);
 __decorate([
     (0, typeorm_1.Column)(),
-    __metadata("design:type", Number)
-], RoadmapStep.prototype, "weekNumber", void 0);
-__decorate([
-    (0, typeorm_1.Column)(),
     __metadata("design:type", String)
 ], RoadmapStep.prototype, "title", void 0);
 __decorate([
@@ -52,9 +48,13 @@ __decorate([
     __metadata("design:type", String)
 ], RoadmapStep.prototype, "type", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", Number)
+], RoadmapStep.prototype, "estimatedHours", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
-], RoadmapStep.prototype, "duration", void 0);
+], RoadmapStep.prototype, "learningObjectives", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)('Roadmap', 'steps'),
     (0, typeorm_1.JoinColumn)({ name: 'roadmapId' }),

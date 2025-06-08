@@ -15,51 +15,131 @@ import {
   Target,
   PlayCircle,
   Award,
-  Calendar
+  Calendar,
+  User
 } from 'lucide-react'
 import { DiscussionThreads } from '@/components/roadmap/discussion-threads'
+import { toast } from 'sonner'
 
 interface RoadmapStep {
   id: number
   title: string
   description: string
-  type: 'video' | 'article' | 'quiz' | 'project'
-  duration?: string
+  type: string
+  estimatedHours: number
   completed: boolean
+  learningObjectives?: string
   resources?: Array<{
     title: string
     url: string
     type: 'video' | 'article' | 'documentation'
   }>
-  week?: number
+  weekNumbers?: number[] // Which weeks this step spans
 }
 
 interface Roadmap {
   id: number
   title: string
   description: string
-  skillCategory: string
-  difficulty: 'Beginner' | 'Intermediate' | 'Advanced'
-  duration?: string
-  skills?: string[]
+  difficulty: string
+  skills: string[]
   steps?: RoadmapStep[]
+}
+
+interface User {
+  id: number
+  name: string
+  email: string
+  role: string
+  availableWeeklyHours?: number
+}
+
+interface WeekData {
+  weekNumber: number
+  steps: RoadmapStep[]
+  totalHours: number
+  progressPercentage: number
 }
 
 export default function RoadmapViewer() {
   const { id } = useParams()
   const router = useRouter()
   const [roadmap, setRoadmap] = useState<Roadmap | null>(null)
-  const [steps, setSteps] = useState<RoadmapStep[]>([])
-  const [currentWeek, setCurrentWeek] = useState(1)
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [selectedWeek, setSelectedWeek] = useState(1)
 
-  const getWeekSteps = (week: number) => {
-    return steps.filter(step => step.week === week)
+  // Calculate personalized timeline
+  const calculatePersonalizedTimeline = () => {
+    if (!roadmap?.steps || !user?.availableWeeklyHours) return { totalHours: 0, estimatedWeeks: 0 }
+    
+    const totalHours = roadmap.steps.reduce((sum, step) => sum + step.estimatedHours, 0)
+    const estimatedWeeks = Math.ceil(totalHours / user.availableWeeklyHours)
+    
+    return { totalHours, estimatedWeeks }
   }
 
-  const totalWeeks = Math.max(...steps.map(step => step.week || 1), 1)
+  // Advanced week calculation: steps can span multiple weeks, weeks can have multiple steps
+  const calculateWeeksAndSteps = (): { weeksData: WeekData[], stepsWithWeeks: RoadmapStep[] } => {
+    if (!roadmap?.steps || !user?.availableWeeklyHours) return { weeksData: [], stepsWithWeeks: [] }
+    
+    const hoursPerWeek = user.availableWeeklyHours
+    const { estimatedWeeks } = calculatePersonalizedTimeline()
+    
+    // Initialize weeks data
+    const weeksData: WeekData[] = Array.from({ length: estimatedWeeks }, (_, i) => ({
+      weekNumber: i + 1,
+      steps: [],
+      totalHours: 0,
+      progressPercentage: 0
+    }))
+    
+    // Process each step and assign to weeks
+    const stepsWithWeeks: RoadmapStep[] = roadmap.steps.map(step => {
+      const weekNumbers: number[] = []
+      let remainingHours = step.estimatedHours
+      let currentWeek = 1
+      
+      // Find the first week with available capacity
+      while (remainingHours > 0 && currentWeek <= estimatedWeeks) {
+        const weekData = weeksData[currentWeek - 1]
+        const availableHours = hoursPerWeek - weekData.totalHours
+        
+        if (availableHours > 0) {
+          // Add this step to the current week
+          weekNumbers.push(currentWeek)
+          weekData.steps.push(step)
+          
+          // Calculate how many hours to allocate to this week
+          const hoursToAllocate = Math.min(remainingHours, availableHours)
+          weekData.totalHours += hoursToAllocate
+          remainingHours -= hoursToAllocate
+        }
+        
+        currentWeek++
+      }
+      
+      return { ...step, weekNumbers }
+    })
+    
+    // Calculate progress for each week
+    weeksData.forEach(week => {
+      if (week.steps.length > 0) {
+        const completedSteps = week.steps.filter(step => step.completed).length
+        week.progressPercentage = Math.round((completedSteps / week.steps.length) * 100)
+      }
+    })
+    
+    return { weeksData, stepsWithWeeks }
+  }
+
+  const getStepsForWeek = (weekNumber: number): RoadmapStep[] => {
+    if (!roadmap?.steps) return []
+    
+    const { stepsWithWeeks } = calculateWeeksAndSteps()
+    return stepsWithWeeks.filter(step => step.weekNumbers?.includes(weekNumber)) || []
+  }
 
   useEffect(() => {
     const loadRoadmapWithProgress = async () => {
@@ -72,10 +152,11 @@ export default function RoadmapViewer() {
         return
       }
 
-      setUser(JSON.parse(userData))
+      const parsedUser = JSON.parse(userData)
+      setUser(parsedUser)
 
       try {
-        // Fetch roadmap data from backend
+        // Fetch roadmap data with steps included
         const roadmapResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/roadmaps/${id}`, {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -90,20 +171,19 @@ export default function RoadmapViewer() {
 
         const roadmapData = await roadmapResponse.json()
 
-        // Fetch roadmap steps
-        const stepsResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/roadmaps/${id}/steps`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
+        // If steps aren't included, fetch them separately
+        let stepsData = roadmapData.steps || []
+        if (!stepsData.length) {
+          const stepsResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/roadmaps/${id}/steps`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          })
+
+          if (stepsResponse.ok) {
+            stepsData = await stepsResponse.json()
           }
-        })
-
-        if (!stepsResponse.ok) {
-          setError('Failed to load roadmap steps')
-          setLoading(false)
-          return
         }
-
-        const stepsData = await stepsResponse.json()
 
         // Try to get user's progress
         let userProgress: any[] = []
@@ -132,8 +212,7 @@ export default function RoadmapViewer() {
           }
         })
 
-        setRoadmap(roadmapData)
-        setSteps(stepsWithProgress)
+        setRoadmap({ ...roadmapData, steps: stepsWithProgress })
         setLoading(false)
       } catch (error) {
         console.error('Error loading roadmap:', error)
@@ -150,7 +229,7 @@ export default function RoadmapViewer() {
     
     try {
       const token = localStorage.getItem('token')
-      const stepToUpdate = steps.find(step => step.id === stepId)
+      const stepToUpdate = roadmap.steps?.find(step => step.id === stepId)
       
       if (!stepToUpdate) return
       
@@ -170,30 +249,36 @@ export default function RoadmapViewer() {
 
       if (response.ok) {
         // Update local state
-        setSteps(prevSteps => 
-          prevSteps.map(step => 
-            step.id === stepId ? { ...step, completed: !step.completed } : step
-          )
-        )
+        setRoadmap(prevRoadmap => {
+          if (!prevRoadmap?.steps) return prevRoadmap
+          
+          return {
+            ...prevRoadmap,
+            steps: prevRoadmap.steps.map(step => 
+              step.id === stepId ? { ...step, completed: !step.completed } : step
+            )
+          }
+        })
+        
+        toast.success(stepToUpdate.completed ? 'Step marked as in progress' : 'Step completed! 🎉')
       } else {
-        console.error('Failed to update progress')
+        toast.error('Failed to update progress')
       }
     } catch (error) {
       console.error('Error updating progress:', error)
+      toast.error('Error updating progress')
     }
   }
 
   const getOverallProgress = () => {
-    if (steps.length === 0) return 0
-    const completedSteps = steps.filter(step => step.completed).length
-    return Math.round((completedSteps / steps.length) * 100)
+    if (!roadmap?.steps?.length) return 0
+    const completedSteps = roadmap.steps.filter(step => step.completed).length
+    return Math.round((completedSteps / roadmap.steps.length) * 100)
   }
 
-  const getWeekProgress = (week: number) => {
-    const weekSteps = getWeekSteps(week)
-    if (weekSteps.length === 0) return 0
-    const completed = weekSteps.filter(step => step.completed).length
-    return Math.round((completed / weekSteps.length) * 100)
+  const getPersonalizedDuration = () => {
+    const { totalHours } = calculatePersonalizedTimeline()
+    return totalHours > 0 ? `${totalHours}h total` : 'Duration varies'
   }
 
   if (loading) {
@@ -218,7 +303,9 @@ export default function RoadmapViewer() {
     )
   }
 
-  const currentWeekSteps = getWeekSteps(currentWeek)
+  const { totalHours, estimatedWeeks } = calculatePersonalizedTimeline()
+  const { weeksData } = calculateWeeksAndSteps()
+  const currentWeekSteps = getStepsForWeek(selectedWeek)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
@@ -241,181 +328,320 @@ export default function RoadmapViewer() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-white">{roadmap.title}</h1>
-                <p className="text-gray-400 text-sm">{roadmap.skillCategory}</p>
+                <p className="text-gray-400 text-sm">{roadmap.description}</p>
               </div>
             </div>
-            <Badge 
-              variant="outline" 
-              className={`
-                px-3 py-1 text-sm font-medium
-                ${roadmap.difficulty === 'Beginner' ? 'border-green-500/50 bg-green-500/10 text-green-400' : ''}
-                ${roadmap.difficulty === 'Intermediate' ? 'border-yellow-500/50 bg-yellow-500/10 text-yellow-400' : ''}
-                ${roadmap.difficulty === 'Advanced' ? 'border-red-500/50 bg-red-500/10 text-red-400' : ''}
-              `}
-            >
-              {roadmap.difficulty}
-            </Badge>
+            <div className="flex items-center space-x-4">
+              <Badge 
+                variant="outline" 
+                className={`
+                  px-3 py-1 text-sm font-medium
+                  ${roadmap.difficulty === 'Beginner' ? 'border-green-500/50 bg-green-500/10 text-green-400' : ''}
+                  ${roadmap.difficulty === 'Intermediate' ? 'border-yellow-500/50 bg-yellow-500/10 text-yellow-400' : ''}
+                  ${roadmap.difficulty === 'Advanced' ? 'border-red-500/50 bg-red-500/10 text-red-400' : ''}
+                `}
+              >
+                {roadmap.difficulty}
+              </Badge>
+              {user && (
+                <div className="flex items-center text-gray-400 text-sm">
+                  <User className="h-4 w-4 mr-1" />
+                  {user.name}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>
 
-      <div className="container mx-auto px-6 py-8">
-        {/* Progress Overview */}
+      <div className="container mx-auto px-6 py-12">
+        {/* Personalized Timeline Overview */}
         <Card className="bg-gray-800/50 border-gray-700/50 backdrop-blur-sm mb-8">
           <CardHeader>
             <CardTitle className="text-white flex items-center">
               <Target className="h-5 w-5 mr-2 text-blue-400" />
-              Overall Progress
+              Your Personalized Learning Plan
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-white">{getOverallProgress()}%</div>
-                  <div className="text-sm text-gray-400">Complete</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-400">{currentWeek}</div>
-                  <div className="text-sm text-gray-400">of {totalWeeks} weeks</div>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-white">{getOverallProgress()}%</div>
+                <div className="text-sm text-gray-400">Complete</div>
               </div>
-              <Award className="h-12 w-12 text-yellow-500" />
+              <div className="text-center">
+                <div className="text-3xl font-bold text-blue-400">
+                  {totalHours > 0 ? `${totalHours}h` : 'Duration varies'}
+                </div>
+                <div className="text-sm text-gray-400">Total Hours</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-purple-400">{estimatedWeeks}</div>
+                <div className="text-sm text-gray-400">Weeks for You</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-green-400">{user?.availableWeeklyHours || 0}h</div>
+                <div className="text-sm text-gray-400">Per Week</div>
+              </div>
             </div>
             <Progress value={getOverallProgress()} className="h-3" />
+            
+            {roadmap.skills && roadmap.skills.length > 0 && (
+              <div className="mt-6">
+                <p className="text-sm text-gray-400 mb-3 font-medium uppercase tracking-wide">Skills you'll master</p>
+                <div className="flex flex-wrap gap-2">
+                  {roadmap.skills.map((skill, index) => (
+                    <Badge key={index} variant="secondary" className="text-xs px-3 py-1 bg-blue-600/20 text-blue-300 border-blue-500/30">
+                      {skill}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
+        {/* Two Column Layout: Weeks on Left, Steps on Right */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Week Navigation Sidebar */}
+          {/* Left Section: Week Navigation */}
           <div className="lg:col-span-1">
             <Card className="bg-gray-800/30 border-gray-700/30 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="text-white flex items-center">
                   <Calendar className="h-5 w-5 mr-2 text-purple-400" />
-                  Weeks
+                  Weeks Span
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                {Array.from({ length: totalWeeks }, (_, i) => i + 1).map((week) => (
-                  <button
-                    key={week}
-                    onClick={() => setCurrentWeek(week)}
-                    className={`
-                      w-full p-4 rounded-lg text-left transition-all duration-200
-                      ${currentWeek === week 
-                        ? 'bg-blue-600/20 border-blue-500/50 border' 
-                        : 'bg-gray-700/30 hover:bg-gray-700/50 border border-gray-600/30'
+              <CardContent className="space-y-4">
+                {(() => {
+                  const { stepsWithWeeks } = calculateWeeksAndSteps()
+                  
+                  // Group steps by their week spans
+                  const weekSpanGroups = new Map<string, RoadmapStep[]>()
+                  
+                  stepsWithWeeks.forEach(step => {
+                    if (step.weekNumbers && step.weekNumbers.length > 0) {
+                      const weekKey = step.weekNumbers.join(',')
+                      if (!weekSpanGroups.has(weekKey)) {
+                        weekSpanGroups.set(weekKey, [])
                       }
-                    `}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-white font-medium">Week {week}</span>
-                      <span className="text-xs text-gray-400">{getWeekProgress(week)}%</span>
-                    </div>
-                    <p className="text-sm text-gray-300 mb-2">Week {week} Content</p>
-                    <Progress value={getWeekProgress(week)} className="h-1" />
-                  </button>
-                ))}
+                      weekSpanGroups.get(weekKey)!.push(step)
+                    }
+                  })
+                  
+                  // Convert to array and sort by first week number
+                  const sortedGroups = Array.from(weekSpanGroups.entries())
+                    .sort((a, b) => {
+                      const aFirstWeek = parseInt(a[0].split(',')[0])
+                      const bFirstWeek = parseInt(b[0].split(',')[0])
+                      return aFirstWeek - bFirstWeek
+                    })
+                  
+                  return sortedGroups.map(([weekKey, steps], index) => {
+                    const weekNumbers = weekKey.split(',').map(Number)
+                    const totalHours = steps.reduce((sum, step) => sum + step.estimatedHours, 0)
+                    const completedSteps = steps.filter(step => step.completed).length
+                    const progressPercentage = Math.round((completedSteps / steps.length) * 100)
+                    
+                    // Format week display
+                    const formatWeekSpan = (weeks: number[]): string => {
+                      if (weeks.length === 1) {
+                        return `Week ${weeks[0]}`
+                      } else if (weeks.length === 2) {
+                        return `Week ${weeks[0]} & ${weeks[1]}`
+                      } else if (weeks.length === 3) {
+                        return `Week ${weeks[0]}, ${weeks[1]} & ${weeks[2]}`
+                      } else {
+                        // For more than 3 weeks, show as range
+                        const consecutive = weeks.every((week, i) => i === 0 || week === weeks[i-1] + 1)
+                        if (consecutive) {
+                          return `Week ${weeks[0]}-${weeks[weeks.length - 1]}`
+                        } else {
+                          return `Week ${weeks.slice(0, -1).join(', ')} & ${weeks[weeks.length - 1]}`
+                        }
+                      }
+                    }
+                    
+                    const isSelected = weekNumbers.includes(selectedWeek)
+                    
+                    return (
+                      <div
+                        key={weekKey}
+                        className={`
+                          p-4 rounded-lg border transition-all duration-200
+                          ${isSelected 
+                            ? 'bg-blue-600/20 border-blue-500/50' 
+                            : 'bg-gray-700/30 border-gray-600/30'
+                          }
+                        `}
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="text-white font-medium text-sm">
+                            {formatWeekSpan(weekNumbers)}
+                          </h4>
+                          <span className="text-xs text-gray-400">{progressPercentage}%</span>
+                        </div>
+                        
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-xs text-gray-400">
+                            {steps.length} step{steps.length !== 1 ? 's' : ''}
+                          </span>
+                          <div className="flex items-center text-xs text-gray-400">
+                            <Clock className="h-3 w-3 mr-1" />
+                            {totalHours}h
+                          </div>
+                        </div>
+                        
+                        <Progress value={progressPercentage} className="h-1.5 mb-3" />
+                        
+                        {/* Step list */}
+                        <div className="space-y-1">
+                          {steps.map((step, stepIndex) => (
+                            <button
+                              key={step.id}
+                              onClick={() => {
+                                // Set selected week to the first week of this step
+                                setSelectedWeek(step.weekNumbers?.[0] || 1)
+                              }}
+                              className={`
+                                w-full text-left p-2 rounded text-xs transition-colors
+                                ${step.completed 
+                                  ? 'bg-green-600/20 text-green-300' 
+                                  : 'bg-gray-600/20 text-gray-300 hover:bg-gray-600/30'
+                                }
+                              `}
+                            >
+                              <div className="flex items-center space-x-2">
+                                {step.completed ? (
+                                  <CheckCircle2 className="h-3 w-3 text-green-400" />
+                                ) : (
+                                  <Circle className="h-3 w-3 text-gray-400" />
+                                )}
+                                <span className="truncate">
+                                  {step.title}
+                                </span>
+                              </div>
+                              {step.weekNumbers && step.weekNumbers.length > 1 && (
+                                <div className="text-xs text-purple-400 mt-1 ml-5">
+                                  Spans {formatWeekSpan(step.weekNumbers)}
+                                </div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })
+                })()}
               </CardContent>
             </Card>
           </div>
 
-          {/* Main Content */}
+          {/* Right Section: Steps for Selected Week */}
           <div className="lg:col-span-3">
-            <div className="space-y-6">
-              {/* Week Header */}
-              <Card className="bg-gray-800/50 border-gray-700/50 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="text-white text-2xl">
-                    Week {currentWeek}
-                  </CardTitle>
-                  {roadmap.description && (
-                    <p className="text-gray-300">{roadmap.description}</p>
-                  )}
-                </CardHeader>
-              </Card>
+            <Card className="bg-gray-800/50 border-gray-700/50 backdrop-blur-sm mb-6">
+              <CardHeader>
+                <CardTitle className="text-white text-2xl flex items-center justify-between">
+                  <span>Week {selectedWeek}</span>
+                  <div className="flex items-center text-sm text-gray-400">
+                    <Clock className="h-4 w-4 mr-1" />
+                    {weeksData[selectedWeek - 1]?.totalHours || 0}h total
+                  </div>
+                </CardTitle>
+              </CardHeader>
+            </Card>
 
-              {/* Steps */}
-              <div className="space-y-4">
-                {currentWeekSteps.length === 0 ? (
-                  <Card className="bg-gray-800/50 border-gray-700/50 backdrop-blur-sm">
-                    <CardContent className="py-8 text-center">
-                      <p className="text-gray-400">No steps available for Week {currentWeek}</p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  currentWeekSteps.map((step, index) => (
-                    <Card 
-                      key={step.id} 
-                      className={`
-                        border transition-all duration-300 shadow-lg
-                        ${step.completed 
-                          ? 'bg-green-900/20 border-green-500/30' 
-                          : 'bg-gray-800/50 border-gray-700/50 hover:bg-gray-800/60'
-                        }
-                      `}
-                    >
-                      <CardContent className="p-6">
-                        <div className="flex items-start space-x-4">
-                          <button
-                            onClick={() => toggleStepCompletion(step.id)}
-                            className="mt-1"
-                          >
-                            {step.completed ? (
-                              <CheckCircle2 className="h-6 w-6 text-green-400" />
-                            ) : (
-                              <Circle className="h-6 w-6 text-gray-400 hover:text-blue-400 transition-colors" />
-                            )}
-                          </button>
+            {/* Steps for Current Week */}
+            <div className="space-y-6">
+              {currentWeekSteps.length === 0 ? (
+                <Card className="bg-gray-800/50 border-gray-700/50 backdrop-blur-sm">
+                  <CardContent className="py-12 text-center">
+                    <Calendar className="h-12 w-12 text-gray-600 mx-auto mb-4" />
+                    <p className="text-gray-400 text-lg">No steps for Week {selectedWeek}</p>
+                    <p className="text-gray-500 text-sm mt-2">This week might be a buffer or review period</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                currentWeekSteps.map((step, index) => (
+                  <Card 
+                    key={step.id} 
+                    className={`
+                      border transition-all duration-300 shadow-lg
+                      ${step.completed 
+                        ? 'bg-green-900/20 border-green-500/30' 
+                        : 'bg-gray-800/50 border-gray-700/50 hover:bg-gray-800/60'
+                      }
+                    `}
+                  >
+                    <CardContent className="p-6">
+                      <div className="flex items-start space-x-4">
+                        <button
+                          onClick={() => toggleStepCompletion(step.id)}
+                          className="mt-1 hover:scale-110 transition-transform"
+                        >
+                          {step.completed ? (
+                            <CheckCircle2 className="h-6 w-6 text-green-400" />
+                          ) : (
+                            <Circle className="h-6 w-6 text-gray-400 hover:text-blue-400 transition-colors" />
+                          )}
+                        </button>
+                        
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-2">
+                            <h3 className={`text-lg font-semibold ${step.completed ? 'text-green-300' : 'text-white'}`}>
+                              {step.title}
+                            </h3>
+                            <div className="flex items-center space-x-3">
+                              {step.type && (
+                                <Badge variant="outline" className="text-xs capitalize">
+                                  {step.type}
+                                </Badge>
+                              )}
+                              <div className="flex items-center text-gray-400 text-sm">
+                                <Clock className="h-4 w-4 mr-1" />
+                                {step.estimatedHours}h
+                              </div>
+                              {step.weekNumbers && step.weekNumbers.length > 1 && (
+                                <Badge variant="secondary" className="text-xs px-2 py-1 bg-purple-600/20 text-purple-300">
+                                  Spans weeks {step.weekNumbers.join(', ')}
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
                           
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between mb-2">
-                              <h3 className={`text-lg font-semibold ${step.completed ? 'text-green-300' : 'text-white'}`}>
-                                {step.title}
-                              </h3>
-                              <div className="flex items-center space-x-3">
-                                {step.type && (
-                                  <Badge variant="outline" className="text-xs">
-                                    {step.type}
-                                  </Badge>
-                                )}
-                                {step.duration && (
-                                  <div className="flex items-center text-gray-400 text-sm">
-                                    <Clock className="h-4 w-4 mr-1" />
-                                    {step.duration}
-                                  </div>
-                                )}
+                          <p className="text-gray-300 mb-4">{step.description}</p>
+                          
+                          {step.learningObjectives && (
+                            <div className="mb-4 p-3 bg-blue-600/10 border border-blue-500/20 rounded-lg">
+                              <p className="text-sm font-medium text-blue-400 mb-1">Learning Objectives</p>
+                              <p className="text-sm text-gray-300">{step.learningObjectives}</p>
+                            </div>
+                          )}
+                          
+                          {step.resources && step.resources.length > 0 && (
+                            <div className="space-y-2">
+                              <p className="text-sm font-medium text-gray-400 uppercase tracking-wide">Resources</p>
+                              <div className="space-y-2">
+                                {step.resources.map((resource, resourceIndex) => (
+                                  <Button
+                                    key={resourceIndex}
+                                    variant="outline"
+                                    size="sm"
+                                    className="text-blue-400 border-blue-500/30 hover:bg-blue-500/10"
+                                  >
+                                    <PlayCircle className="h-4 w-4 mr-2" />
+                                    {resource.title}
+                                  </Button>
+                                ))}
                               </div>
                             </div>
-                            
-                            <p className="text-gray-300 mb-4">{step.description}</p>
-                            
-                            {step.resources && step.resources.length > 0 && (
-                              <div className="space-y-2">
-                                <p className="text-sm font-medium text-gray-400 uppercase tracking-wide">Resources</p>
-                                <div className="space-y-2">
-                                  {step.resources.map((resource, resourceIndex) => (
-                                    <Button
-                                      key={resourceIndex}
-                                      variant="outline"
-                                      size="sm"
-                                      className="text-blue-400 border-blue-500/30 hover:bg-blue-500/10"
-                                    >
-                                      <PlayCircle className="h-4 w-4 mr-2" />
-                                      {resource.title}
-                                    </Button>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </div>
+                          )}
                         </div>
-                      </CardContent>
-                    </Card>
-                  ))
-                )}
-              </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
             </div>
           </div>
         </div>

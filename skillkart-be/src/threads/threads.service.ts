@@ -91,11 +91,11 @@ export class ThreadsService {
     }));
   }
 
-  // POST /comments (Learners only)
+  // POST /comments (Learners and Admins)
   async createComment(threadId: number, createCommentDto: CreateCommentDto, user: User) {
-    // Only learners can create comments
-    if (user.role !== UserRole.LEARNER) {
-      throw new ForbiddenException('Only learners can create comments');
+    // Both learners and admins can create comments
+    if (user.role !== UserRole.LEARNER && user.role !== UserRole.ADMIN) {
+      throw new ForbiddenException('Only learners and admins can create comments');
     }
 
     // Verify thread exists

@@ -14,11 +14,8 @@ const typeorm_1 = require("typeorm");
 let Roadmap = class Roadmap {
     id;
     title;
-    skillCategory;
     description;
-    totalWeeks;
     difficulty;
-    duration;
     skills;
     steps;
     userRoadmaps;
@@ -38,23 +35,11 @@ __decorate([
 __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", String)
-], Roadmap.prototype, "skillCategory", void 0);
-__decorate([
-    (0, typeorm_1.Column)(),
-    __metadata("design:type", String)
 ], Roadmap.prototype, "description", void 0);
-__decorate([
-    (0, typeorm_1.Column)(),
-    __metadata("design:type", Number)
-], Roadmap.prototype, "totalWeeks", void 0);
 __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", String)
 ], Roadmap.prototype, "difficulty", void 0);
-__decorate([
-    (0, typeorm_1.Column)(),
-    __metadata("design:type", String)
-], Roadmap.prototype, "duration", void 0);
 __decorate([
     (0, typeorm_1.Column)('text', { array: true, nullable: true }),
     __metadata("design:type", Array)

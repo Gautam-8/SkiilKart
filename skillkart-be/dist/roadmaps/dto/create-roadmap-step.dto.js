@@ -9,33 +9,47 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UpdateProfileDto = void 0;
+exports.CreateRoadmapStepDto = exports.StepType = void 0;
 const class_validator_1 = require("class-validator");
-class UpdateProfileDto {
-    name;
-    interests;
-    goal;
-    availableWeeklyHours;
+var StepType;
+(function (StepType) {
+    StepType["VIDEOS"] = "Videos";
+    StepType["BLOGS"] = "Blogs";
+    StepType["QUIZZES"] = "Quizzes";
+})(StepType || (exports.StepType = StepType = {}));
+class CreateRoadmapStepDto {
+    title;
+    description;
+    type;
+    roadmapId;
+    estimatedHours;
+    learningObjectives;
 }
-exports.UpdateProfileDto = UpdateProfileDto;
+exports.CreateRoadmapStepDto = CreateRoadmapStepDto;
 __decorate([
     (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
-], UpdateProfileDto.prototype, "name", void 0);
-__decorate([
-    (0, class_validator_1.IsArray)(),
-    (0, class_validator_1.IsOptional)(),
-    __metadata("design:type", Array)
-], UpdateProfileDto.prototype, "interests", void 0);
+], CreateRoadmapStepDto.prototype, "title", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
-], UpdateProfileDto.prototype, "goal", void 0);
+], CreateRoadmapStepDto.prototype, "description", void 0);
+__decorate([
+    (0, class_validator_1.IsEnum)(StepType),
+    __metadata("design:type", String)
+], CreateRoadmapStepDto.prototype, "type", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    __metadata("design:type", Number)
+], CreateRoadmapStepDto.prototype, "roadmapId", void 0);
 __decorate([
     (0, class_validator_1.IsNumber)(),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Number)
-], UpdateProfileDto.prototype, "availableWeeklyHours", void 0);
-//# sourceMappingURL=update-profile.dto.js.map
+], CreateRoadmapStepDto.prototype, "estimatedHours", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateRoadmapStepDto.prototype, "learningObjectives", void 0);
+//# sourceMappingURL=create-roadmap-step.dto.js.map

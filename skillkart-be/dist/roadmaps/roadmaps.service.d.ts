@@ -5,6 +5,8 @@ import { UserRoadmap } from '../entities/user-roadmap.entity';
 import { UserRoadmapProgress, ProgressStatus } from '../entities/user-roadmap-progress.entity';
 import { User } from '../entities/user.entity';
 import { CreateUserRoadmapDto } from './dto/create-user-roadmap.dto';
+import { CreateRoadmapDto } from './dto/create-roadmap.dto';
+import { CreateRoadmapStepDto } from './dto/create-roadmap-step.dto';
 import { UpdateStepProgressDto } from './dto/update-step-progress.dto';
 import { GamificationService } from '../gamification/gamification.service';
 export declare class RoadmapsService {
@@ -16,23 +18,7 @@ export declare class RoadmapsService {
     constructor(roadmapRepository: Repository<Roadmap>, roadmapStepRepository: Repository<RoadmapStep>, userRoadmapRepository: Repository<UserRoadmap>, userRoadmapProgressRepository: Repository<UserRoadmapProgress>, gamificationService: GamificationService);
     getAllRoadmaps(): Promise<Roadmap[]>;
     getRoadmapById(id: number): Promise<Roadmap>;
-    getRoadmapsBySkill(skillCategory: string): Promise<Roadmap[]>;
-    getRoadmapSteps(roadmapId: number): Promise<{
-        week: number;
-        id: number;
-        roadmapId: number;
-        weekNumber: number;
-        title: string;
-        description: string;
-        type: string;
-        duration: string;
-        roadmap: any;
-        resources: any[];
-        userProgress: any[];
-        threads: any[];
-        createdAt: Date;
-        updatedAt: Date;
-    }[]>;
+    getRoadmapSteps(roadmapId: number): Promise<RoadmapStep[]>;
     startUserRoadmap(userId: number, createUserRoadmapDto: CreateUserRoadmapDto, user: User): Promise<UserRoadmap>;
     getUserRoadmap(id: number, userId: number): Promise<{
         roadmap: Roadmap;
@@ -68,4 +54,6 @@ export declare class RoadmapsService {
         success: boolean;
         status: ProgressStatus;
     }>;
+    createRoadmap(createRoadmapDto: CreateRoadmapDto, user: User): Promise<Roadmap>;
+    createRoadmapStep(roadmapId: number, createRoadmapStepDto: CreateRoadmapStepDto, user: User): Promise<RoadmapStep>;
 }

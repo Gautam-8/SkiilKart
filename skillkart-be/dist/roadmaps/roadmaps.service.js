@@ -36,7 +36,9 @@ let RoadmapsService = class RoadmapsService {
         this.gamificationService = gamificationService;
     }
     async getAllRoadmaps() {
-        return await this.roadmapRepository.find();
+        return await this.roadmapRepository.find({
+            relations: ['steps']
+        });
     }
     async getRoadmapById(id) {
         const roadmap = await this.roadmapRepository.findOne({
@@ -47,20 +49,12 @@ let RoadmapsService = class RoadmapsService {
         }
         return roadmap;
     }
-    async getRoadmapsBySkill(skillCategory) {
-        return await this.roadmapRepository.find({
-            where: { skillCategory }
-        });
-    }
     async getRoadmapSteps(roadmapId) {
         const steps = await this.roadmapStepRepository.find({
             where: { roadmapId },
-            order: { weekNumber: 'ASC', id: 'ASC' }
+            order: { id: 'ASC' }
         });
-        return steps.map(step => ({
-            ...step,
-            week: step.weekNumber
-        }));
+        return steps;
     }
     async startUserRoadmap(userId, createUserRoadmapDto, user) {
         if (user.role !== user_entity_1.UserRole.LEARNER) {
@@ -193,6 +187,27 @@ let RoadmapsService = class RoadmapsService {
             await this.gamificationService.awardXPForStepCompletion(userId, stepId);
         }
         return { success: true, status };
+    }
+    async createRoadmap(createRoadmapDto, user) {
+        if (user.role !== user_entity_1.UserRole.ADMIN) {
+            throw new common_1.ForbiddenException('Only admins can create roadmaps');
+        }
+        const roadmap = this.roadmapRepository.create(createRoadmapDto);
+        await this.roadmapRepository.save(roadmap);
+        return roadmap;
+    }
+    async createRoadmapStep(roadmapId, createRoadmapStepDto, user) {
+        if (user.role !== user_entity_1.UserRole.ADMIN) {
+            throw new common_1.ForbiddenException('Only admins can create roadmap steps');
+        }
+        const roadmap = await this.roadmapRepository.findOne({ where: { id: roadmapId } });
+        if (!roadmap) {
+            throw new common_1.NotFoundException('Roadmap not found');
+        }
+        const stepData = { ...createRoadmapStepDto, roadmapId };
+        const step = this.roadmapStepRepository.create(stepData);
+        await this.roadmapStepRepository.save(step);
+        return step;
     }
 };
 exports.RoadmapsService = RoadmapsService;

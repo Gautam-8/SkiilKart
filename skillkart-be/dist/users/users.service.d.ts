@@ -12,5 +12,12 @@ export declare class UsersService {
         interests: string[];
         goal: string;
         availableWeeklyHours: number;
+        userRoadmaps: any[];
+        threads: any[];
+        comments: any[];
+        xpLogs: any[];
+        userBadges: any[];
+        createdAt: Date;
+        updatedAt: Date;
     }>;
 }

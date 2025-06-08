@@ -33,7 +33,7 @@ exports.UsersController = UsersController;
 __decorate([
     (0, common_1.Patch)('profile'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(user_entity_1.UserRole.LEARNER),
+    (0, roles_decorator_1.Roles)(user_entity_1.UserRole.LEARNER, user_entity_1.UserRole.ADMIN),
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
