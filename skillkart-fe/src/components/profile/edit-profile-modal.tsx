@@ -131,14 +131,19 @@ export default function EditProfileModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-              <DialogContent className="sm:max-w-2xl max-h-[90vh] bg-gray-900 border-gray-700 overflow-hidden scrollbar-modern">
-          <div className="max-h-[80vh] overflow-y-auto pr-2 scrollbar-modern">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-white flex items-center">
-            <User className="h-6 w-6 mr-2" />
-            Edit Profile
-          </DialogTitle>
-        </DialogHeader>
+      <DialogContent className="w-[95vw] max-w-2xl max-h-[95vh] bg-gray-900 border-gray-700 p-0 gap-0 overflow-hidden scrollbar-modern">
+        {/* Fixed Header */}
+        <div className="sticky top-0 bg-gray-900 border-b border-gray-700 p-4 z-10">
+          <DialogHeader>
+            <DialogTitle className="text-lg sm:text-2xl font-bold text-white flex items-center">
+              <User className="h-5 w-5 sm:h-6 sm:w-6 mr-2" />
+              Edit Profile
+            </DialogTitle>
+          </DialogHeader>
+        </div>
+
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto p-4 pb-20 max-h-[calc(95vh-140px)]">
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Name */}
@@ -165,13 +170,13 @@ export default function EditProfileModal({
             </Label>
             <Card className="bg-gray-800 border-gray-700">
               <CardContent className="p-4">
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
                   {INTEREST_OPTIONS.map((interest) => (
                     <div
                       key={interest}
                       onClick={() => !loading && toggleInterest(interest)}
                       className={`
-                        p-3 rounded-lg border cursor-pointer transition-all text-center text-sm
+                        p-2 sm:p-3 rounded-lg border cursor-pointer transition-all text-center text-xs sm:text-sm
                         ${selectedInterests.includes(interest)
                           ? 'border-blue-500 bg-blue-500/20 text-blue-300'
                           : 'border-gray-600 text-gray-300 hover:border-gray-500'
@@ -181,7 +186,7 @@ export default function EditProfileModal({
                     >
                       <div className="flex items-center justify-center">
                         {selectedInterests.includes(interest) && (
-                          <Check className="h-4 w-4 mr-1" />
+                          <Check className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                         )}
                         {interest}
                       </div>
@@ -249,33 +254,42 @@ export default function EditProfileModal({
             </div>
           )}
 
-          {/* Action Buttons */}
-          <div className="flex space-x-3 pt-4">
+        </form>
+        </div>
+
+        {/* Fixed Footer */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-700 p-4">
+          <div className="flex space-x-3">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
               disabled={loading}
               className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-700"
+              size="sm"
             >
               Cancel
             </Button>
             <Button
-              type="submit"
+              onClick={handleSubmit}
               disabled={loading}
               className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+              size="sm"
             >
               {loading ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Updating...
+                  <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 mr-2 animate-spin" />
+                  <span className="hidden sm:inline">Updating...</span>
+                  <span className="sm:hidden">Saving</span>
                 </>
               ) : (
-                'Update Profile'
+                <>
+                  <span className="hidden sm:inline">Update Profile</span>
+                  <span className="sm:hidden">Update</span>
+                </>
               )}
             </Button>
           </div>
-        </form>
         </div>
       </DialogContent>
     </Dialog>

@@ -139,21 +139,25 @@ export function ProfileSetupModal({ open, onOpenChange, onComplete }: ProfileSet
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-gray-900 border-gray-700 sm:max-w-lg scrollbar-modern">
-        <DialogHeader>
-          <DialogTitle className="text-white text-2xl font-semibold text-center">
-            Complete Your Profile
-          </DialogTitle>
-          <div className="mt-4">
-            <div className="flex justify-between text-sm text-gray-400 mb-2">
-              <span>Step {currentStep} of {totalSteps}</span>
-              <span>{Math.round(progress)}% complete</span>
+      <DialogContent className="bg-gray-900 border-gray-700 w-[95vw] max-w-lg max-h-[95vh] p-0 gap-0 overflow-hidden scrollbar-modern">
+        {/* Fixed Header */}
+        <div className="sticky top-0 bg-gray-900 border-b border-gray-700 p-4 z-10">
+          <DialogHeader>
+            <DialogTitle className="text-white text-xl sm:text-2xl font-semibold text-center">
+              Complete Your Profile
+            </DialogTitle>
+            <div className="mt-3">
+              <div className="flex justify-between text-xs sm:text-sm text-gray-400 mb-2">
+                <span>Step {currentStep} of {totalSteps}</span>
+                <span>{Math.round(progress)}% complete</span>
+              </div>
+              <Progress value={progress} className="h-2" />
             </div>
-            <Progress value={progress} className="h-2" />
-          </div>
-        </DialogHeader>
+          </DialogHeader>
+        </div>
 
-        <div className="mt-6">
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto p-4 pb-20 max-h-[calc(95vh-180px)]">
           {/* Step 1: Interests */}
           {currentStep === 1 && (
             <div className="space-y-6">
@@ -167,18 +171,18 @@ export function ProfileSetupModal({ open, onOpenChange, onComplete }: ProfileSet
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                 {AVAILABLE_INTERESTS.map((interest) => (
                   <button
                     key={interest}
                     onClick={() => handleInterestToggle(interest)}
-                    className={`p-3 rounded-lg border transition-all text-left ${
+                    className={`p-2 sm:p-3 rounded-lg border transition-all text-left ${
                       selectedInterests.includes(interest)
                         ? 'bg-blue-600 border-blue-500 text-white'
                         : 'bg-gray-800 border-gray-600 text-gray-300 hover:border-gray-500'
                     }`}
                   >
-                    <span className="text-sm font-medium">{interest}</span>
+                    <span className="text-xs sm:text-sm font-medium">{interest}</span>
                   </button>
                 ))}
               </div>
@@ -277,43 +281,54 @@ export function ProfileSetupModal({ open, onOpenChange, onComplete }: ProfileSet
           )}
         </div>
 
-        {/* Navigation */}
-        <div className="flex justify-between mt-8">
-          <Button
-            variant="outline"
-            onClick={handlePrevious}
-            disabled={currentStep === 1}
-            className="border-gray-600 text-gray-300 hover:bg-gray-800"
-          >
-            <ChevronLeft className="h-4 w-4 mr-1" />
-            Previous
-          </Button>
+        {/* Fixed Footer */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-700 p-4">
+          <div className="flex justify-between gap-3">
+            <Button
+              variant="outline"
+              onClick={handlePrevious}
+              disabled={currentStep === 1}
+              className="border-gray-600 text-gray-300 hover:bg-gray-800 flex-1 sm:flex-initial"
+              size="sm"
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Previous</span>
+              <span className="sm:hidden">Prev</span>
+            </Button>
 
-          {currentStep < totalSteps ? (
-            <Button
-              onClick={handleNext}
-              disabled={!canProceed()}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              Next
-              <ChevronRight className="h-4 w-4 ml-1" />
-            </Button>
-          ) : (
-            <Button
-              onClick={handleSubmit}
-              disabled={!canProceed() || loading}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                'Complete Setup'
-              )}
-            </Button>
-          )}
+            {currentStep < totalSteps ? (
+              <Button
+                onClick={handleNext}
+                disabled={!canProceed()}
+                className="bg-blue-600 hover:bg-blue-700 flex-1 sm:flex-initial"
+                size="sm"
+              >
+                <span className="hidden sm:inline">Next</span>
+                <span className="sm:hidden">Next</span>
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            ) : (
+              <Button
+                onClick={handleSubmit}
+                disabled={!canProceed() || loading}
+                className="bg-green-600 hover:bg-green-700 flex-1 sm:flex-initial"
+                size="sm"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <span className="hidden sm:inline">Saving...</span>
+                    <span className="sm:hidden">Saving</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="hidden sm:inline">Complete Setup</span>
+                    <span className="sm:hidden">Complete</span>
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>

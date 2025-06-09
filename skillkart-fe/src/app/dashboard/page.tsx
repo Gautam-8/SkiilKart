@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ProfileSetupModal } from '@/components/profile/profile-setup-modal'
 import EditProfileModal from '@/components/profile/edit-profile-modal'
 import { GamificationStats } from '@/components/gamification/gamification-stats'
@@ -13,7 +14,8 @@ import {
   Target, 
   Award, 
   Clock,
-  User
+  User,
+  Eye
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -40,6 +42,7 @@ interface RoadmapStep {
   id: number
   title: string
   estimatedHours: number
+  type?: string
 }
 
 interface PersonalizedRoadmap extends Roadmap {
@@ -54,6 +57,8 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [showProfileSetup, setShowProfileSetup] = useState(false)
   const [showEditProfile, setShowEditProfile] = useState(false)
+  const [showFlowchart, setShowFlowchart] = useState(false)
+  const [selectedRoadmapForFlow, setSelectedRoadmapForFlow] = useState<Roadmap | null>(null)
   const router = useRouter()
 
   // Helper function to calculate personalized timeline
@@ -151,6 +156,11 @@ export default function Dashboard() {
     localStorage.setItem('user', JSON.stringify(updatedUser))
     setShowEditProfile(false)
     toast.success('Profile updated successfully!')
+  }
+
+  const handleViewFlowchart = (roadmap: Roadmap) => {
+    setSelectedRoadmapForFlow(roadmap)
+    setShowFlowchart(true)
   }
 
   const isProfileComplete = user?.interests && user?.goal && user?.availableWeeklyHours
@@ -332,12 +342,22 @@ export default function Dashboard() {
                           )}
                         </div>
                       </div>
-                      <Button 
-                        onClick={() => router.push(`/roadmap/${roadmap.id}`)}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 transition-colors"
-                      >
-                        Start My Journey
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button 
+                          onClick={() => handleViewFlowchart(roadmap)}
+                          variant="outline"
+                          size="sm"
+                          className="border-blue-500/30 text-blue-300 hover:bg-blue-500/10"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          onClick={() => router.push(`/roadmap/${roadmap.id}`)}
+                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 transition-colors"
+                        >
+                          Start My Journey
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 )
@@ -386,13 +406,23 @@ export default function Dashboard() {
                           )}
                         </div>
                       </div>
-                      <Button 
-                        variant="outline" 
-                        onClick={() => router.push(`/roadmap/${roadmap.id}`)}
-                        className="w-full border-gray-600/50 text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors py-2.5"
-                      >
-                        View My Plan
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button 
+                          onClick={() => handleViewFlowchart(roadmap)}
+                          variant="outline"
+                          size="sm"
+                          className="border-gray-600/50 text-gray-400 hover:bg-gray-700/50"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => router.push(`/roadmap/${roadmap.id}`)}
+                          className="flex-1 border-gray-600/50 text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors py-2.5"
+                        >
+                          View My Plan
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 )
@@ -444,6 +474,106 @@ export default function Dashboard() {
           onUpdateSuccess={handleProfileUpdate}
         />
       )}
+
+      {/* Flowchart Modal */}
+      <Dialog open={showFlowchart} onOpenChange={setShowFlowchart}>
+        <DialogContent className="bg-gray-900 border-gray-700 max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-white text-xl">
+              {selectedRoadmapForFlow?.title} - Learning Path
+            </DialogTitle>
+          </DialogHeader>
+          
+                    {selectedRoadmapForFlow && (
+            <div className="h-[600px] overflow-y-auto scrollbar-thin scrollbar-track-gray-800/50 scrollbar-thumb-gray-600/50 hover:scrollbar-thumb-gray-500/50">
+              {/* Sticky Header */}
+              <div className="sticky top-0 bg-gray-900/95 backdrop-blur-sm border-b border-gray-700/50 p-4 z-10">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 pr-4">
+                    <p className="text-gray-300 text-sm leading-relaxed">{selectedRoadmapForFlow.description}</p>
+                    <p className="text-gray-400 text-xs mt-2">{selectedRoadmapForFlow.steps?.length || 0} steps • {selectedRoadmapForFlow.steps?.reduce((sum, step) => sum + step.estimatedHours, 0) || 0}h</p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <div className="text-sm font-medium text-blue-400">{selectedRoadmapForFlow.difficulty}</div>
+                    <div className="text-xs text-gray-500">Learning Path</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Compact Step Grid */}
+              <div className="p-4 space-y-3">
+                {selectedRoadmapForFlow.steps?.map((step, index) => {
+                  const getStepColor = () => {
+                    if (step.type?.toLowerCase().includes('video')) return 'border-l-red-400 bg-red-500/5'
+                    if (step.type?.toLowerCase().includes('blog')) return 'border-l-blue-400 bg-blue-500/5'
+                    if (step.type?.toLowerCase().includes('quiz')) return 'border-l-purple-400 bg-purple-500/5'
+                    return 'border-l-yellow-400 bg-yellow-500/5'
+                  }
+                  
+                  const getTypeIcon = () => {
+                    if (step.type?.toLowerCase().includes('video')) return '🎥'
+                    if (step.type?.toLowerCase().includes('blog')) return '📚'
+                    if (step.type?.toLowerCase().includes('quiz')) return '🧩'
+                    return '📝'
+                  }
+
+                  return (
+                    <div 
+                      key={step.id} 
+                      className={`
+                        group p-3 rounded-lg border-l-4 transition-all duration-200
+                        hover:bg-gray-800/30 hover:scale-[1.01] cursor-pointer
+                        ${getStepColor()}
+                      `}
+                    >
+                      <div className="flex items-center space-x-3">
+                        {/* Step Number */}
+                        <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">
+                          {index + 1}
+                        </div>
+                        
+                        {/* Type Icon */}
+                        <div className="text-lg flex-shrink-0">{getTypeIcon()}</div>
+                        
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-white font-medium text-sm group-hover:text-blue-300 transition-colors truncate">
+                            {step.title}
+                          </h4>
+                          <div className="flex items-center space-x-3 mt-1">
+                            {step.type && (
+                              <span className="px-2 py-0.5 bg-gray-700/40 text-gray-300 rounded text-xs">
+                                {step.type}
+                              </span>
+                            )}
+                            <div className="flex items-center text-gray-400 text-xs">
+                              <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              {step.estimatedHours}h
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Progress Dot */}
+                        <div className="w-2 h-2 bg-gray-600 rounded-full flex-shrink-0"></div>
+                      </div>
+                    </div>
+                  )
+                })}
+                
+                {/* Completion */}
+                <div className="pt-4 text-center border-t border-gray-700/30">
+                  <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-500/10 to-blue-500/10 border border-green-400/20 rounded-lg">
+                    <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
+                    <span className="text-green-300 text-sm font-medium">Learning Path Complete</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 } 
