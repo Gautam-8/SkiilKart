@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { LoginModal } from '@/components/auth/login-modal'
@@ -10,6 +11,39 @@ import { BookOpen, Users, Trophy, Rocket, Target, Clock } from 'lucide-react'
 export default function Home() {
   const [showLogin, setShowLogin] = useState(false)
   const [showRegister, setShowRegister] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const router = useRouter()
+
+  // Check if user is already logged in and redirect accordingly
+  useEffect(() => {
+    const checkAuthAndRedirect = () => {
+      const userData = localStorage.getItem('user')
+      const token = localStorage.getItem('token')
+      
+      if (userData && token) {
+        try {
+          const parsedUser = JSON.parse(userData)
+          
+          // Role-based redirect for already logged-in users
+          if (parsedUser.role === 'Admin') {
+            router.push('/admin')
+          } else {
+            router.push('/dashboard')
+          }
+          return // Exit early if redirecting
+        } catch (error) {
+          // If user data is corrupted, clear it
+          localStorage.removeItem('user')
+          localStorage.removeItem('token')
+        }
+      }
+      
+      // User is not logged in, show landing page
+      setLoading(false)
+    }
+
+    checkAuthAndRedirect()
+  }, [router])
 
   const features = [
     {
@@ -43,6 +77,18 @@ export default function Home() {
       description: "Master new skills like Web Development, UI/UX Design, and Data Science systematically."
     }
   ]
+
+  // Show loading spinner while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <div className="text-white text-lg font-medium">Loading SkillKart...</div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">

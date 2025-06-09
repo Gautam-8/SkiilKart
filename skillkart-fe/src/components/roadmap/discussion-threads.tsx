@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { MessageCircle, Send, ThumbsUp, Reply } from 'lucide-react'
+import { MessageCircle, Send, Reply } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface Thread {
@@ -19,9 +19,7 @@ interface Thread {
     name: string
   }
   createdAt: string
-  likes: number
   replies: ThreadReply[]
-  hasLiked: boolean
 }
 
 interface ThreadReply {
@@ -32,8 +30,6 @@ interface ThreadReply {
     name: string
   }
   createdAt: string
-  likes: number
-  hasLiked: boolean
 }
 
 interface DiscussionThreadsProps {
@@ -44,6 +40,8 @@ interface DiscussionThreadsProps {
 export function DiscussionThreads({ roadmapId, stepId }: DiscussionThreadsProps) {
   const [threads, setThreads] = useState<Thread[]>([])
   const [loading, setLoading] = useState(false)
+  const [initialLoading, setInitialLoading] = useState(true)
+  const [replyingLoading, setReplyingLoading] = useState<Set<number>>(new Set())
   const [showNewThread, setShowNewThread] = useState(false)
   const [newThreadTitle, setNewThreadTitle] = useState('')
   const [newThreadContent, setNewThreadContent] = useState('')
@@ -56,12 +54,12 @@ export function DiscussionThreads({ roadmapId, stepId }: DiscussionThreadsProps)
 
   const loadThreads = async () => {
     try {
-      const token = localStorage.getItem('token')
-      const url = stepId 
-        ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/threads/roadmap/${roadmapId}/step/${stepId}`
-        : `${process.env.NEXT_PUBLIC_BACKEND_URL}/threads/roadmap/${roadmapId}`
+      if (threads.length === 0) {
+        setInitialLoading(true)
+      }
       
-      const response = await fetch(url, {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/threads/roadmap/${roadmapId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -73,6 +71,8 @@ export function DiscussionThreads({ roadmapId, stepId }: DiscussionThreadsProps)
       }
     } catch (error) {
       console.error('Error loading threads:', error)
+    } finally {
+      setInitialLoading(false)
     }
   }
 
@@ -115,33 +115,20 @@ export function DiscussionThreads({ roadmapId, stepId }: DiscussionThreadsProps)
     }
   }
 
-  const likeThread = async (threadId: number) => {
-    try {
-      const token = localStorage.getItem('token')
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/threads/${threadId}/like`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-
-      if (response.ok) {
-        loadThreads() // Refresh to get updated like count
-      }
-    } catch (error) {
-      console.error('Error liking thread:', error)
-    }
-  }
-
   const replyToThread = async (threadId: number) => {
     if (!replyContent.trim()) {
       toast.error('Please enter a reply')
       return
     }
 
+    // Prevent multiple replies to the same thread
+    if (replyingLoading.has(threadId)) return
+
+    setReplyingLoading(prev => new Set(prev).add(threadId))
+
     try {
       const token = localStorage.getItem('token')
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/threads/${threadId}/reply`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/threads/${threadId}/comments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -162,6 +149,12 @@ export function DiscussionThreads({ roadmapId, stepId }: DiscussionThreadsProps)
       }
     } catch (error) {
       toast.error('Network error')
+    } finally {
+      setReplyingLoading(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(threadId)
+        return newSet
+      })
     }
   }
 
@@ -185,7 +178,11 @@ export function DiscussionThreads({ roadmapId, stepId }: DiscussionThreadsProps)
           </CardTitle>
           <Button
             onClick={() => setShowNewThread(!showNewThread)}
-            className="bg-blue-600 hover:bg-blue-700"
+            disabled={initialLoading}
+            className={`
+              bg-blue-600 hover:bg-blue-700 transition-all duration-200
+              ${initialLoading ? 'opacity-50 cursor-not-allowed' : ''}
+            `}
           >
             New Thread
           </Button>
@@ -200,27 +197,46 @@ export function DiscussionThreads({ roadmapId, stepId }: DiscussionThreadsProps)
                 placeholder="Thread title..."
                 value={newThreadTitle}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewThreadTitle(e.target.value)}
-                className="bg-gray-800 border-gray-600 text-white"
+                disabled={loading}
+                className={`
+                  bg-gray-800 border-gray-600 text-white transition-all duration-200
+                  ${loading ? 'opacity-50 cursor-not-allowed' : ''}
+                `}
               />
               <Textarea
                 placeholder="What would you like to discuss?"
                 value={newThreadContent}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNewThreadContent(e.target.value)}
-                className="bg-gray-800 border-gray-600 text-white min-h-[100px]"
+                disabled={loading}
+                className={`
+                  bg-gray-800 border-gray-600 text-white min-h-[100px] transition-all duration-200
+                  ${loading ? 'opacity-50 cursor-not-allowed' : ''}
+                `}
               />
               <div className="flex space-x-2">
                 <Button
                   onClick={createThread}
                   disabled={loading}
-                  className="bg-blue-600 hover:bg-blue-700"
+                  className={`
+                    bg-blue-600 hover:bg-blue-700 transition-all duration-200
+                    ${loading ? 'opacity-50 cursor-not-allowed' : ''}
+                  `}
                 >
-                  <Send className="h-4 w-4 mr-2" />
+                  {loading ? (
+                    <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  ) : (
+                    <Send className="h-4 w-4 mr-2" />
+                  )}
                   {loading ? 'Posting...' : 'Post Thread'}
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => setShowNewThread(false)}
-                  className="border-gray-600 text-gray-300"
+                  disabled={loading}
+                  className={`
+                    border-gray-600 text-gray-300 transition-all duration-200
+                    ${loading ? 'opacity-50 cursor-not-allowed' : ''}
+                  `}
                 >
                   Cancel
                 </Button>
@@ -231,7 +247,12 @@ export function DiscussionThreads({ roadmapId, stepId }: DiscussionThreadsProps)
 
         {/* Threads List */}
         <div className="space-y-4">
-          {threads.length === 0 ? (
+          {initialLoading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400 mx-auto mb-4"></div>
+              <p className="text-gray-400">Loading discussions...</p>
+            </div>
+          ) : threads.length === 0 ? (
             <div className="text-center py-8">
               <MessageCircle className="h-12 w-12 text-gray-600 mx-auto mb-4" />
               <p className="text-gray-400">No discussions yet</p>
@@ -261,17 +282,6 @@ export function DiscussionThreads({ roadmapId, stepId }: DiscussionThreadsProps)
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => likeThread(thread.id)}
-                          className={`text-gray-400 hover:text-blue-400 ${
-                            thread.hasLiked ? 'text-blue-400' : ''
-                          }`}
-                        >
-                          <ThumbsUp className="h-4 w-4 mr-1" />
-                          {thread.likes}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
                           onClick={() => setReplyingTo(thread.id)}
                           className="text-gray-400 hover:text-green-400"
                         >
@@ -290,21 +300,36 @@ export function DiscussionThreads({ roadmapId, stepId }: DiscussionThreadsProps)
                             placeholder="Write your reply..."
                             value={replyContent}
                             onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setReplyContent(e.target.value)}
-                            className="bg-gray-700 border-gray-600 text-white mb-3"
+                            disabled={replyingLoading.has(thread.id)}
+                            className={`
+                              bg-gray-700 border-gray-600 text-white mb-3 transition-all duration-200
+                              ${replyingLoading.has(thread.id) ? 'opacity-50 cursor-not-allowed' : ''}
+                            `}
                           />
                           <div className="flex space-x-2">
                             <Button
                               size="sm"
                               onClick={() => replyToThread(thread.id)}
-                              className="bg-green-600 hover:bg-green-700"
+                              disabled={replyingLoading.has(thread.id)}
+                              className={`
+                                bg-green-600 hover:bg-green-700 transition-all duration-200
+                                ${replyingLoading.has(thread.id) ? 'opacity-50 cursor-not-allowed' : ''}
+                              `}
                             >
-                              Post Reply
+                              {replyingLoading.has(thread.id) ? (
+                                <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                              ) : null}
+                              {replyingLoading.has(thread.id) ? 'Posting...' : 'Post Reply'}
                             </Button>
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => setReplyingTo(null)}
-                              className="border-gray-600 text-gray-300"
+                              disabled={replyingLoading.has(thread.id)}
+                              className={`
+                                border-gray-600 text-gray-300 transition-all duration-200
+                                ${replyingLoading.has(thread.id) ? 'opacity-50 cursor-not-allowed' : ''}
+                              `}
                             >
                               Cancel
                             </Button>

@@ -55,7 +55,13 @@ export function LoginModal({ open, onOpenChange, onSwitchToRegister }: LoginModa
         localStorage.setItem('user', JSON.stringify(data.user))
         toast.success('Welcome back!')
         onOpenChange(false)
-        router.push('/dashboard')
+        
+        // Role-based redirect
+        if (data.user.role === 'Admin') {
+          router.push('/admin')
+        } else {
+          router.push('/dashboard')
+        }
       } else {
         toast.error(data.message || 'Login failed')
       }

@@ -81,7 +81,13 @@ export function RegisterModal({ open, onOpenChange, onSwitchToLogin }: RegisterM
         localStorage.setItem('user', JSON.stringify(data.user))
         toast.success('Account created successfully!')
         onOpenChange(false)
-        router.push('/dashboard')
+        
+        // Role-based redirect: Admins go to /admin, Learners go to /dashboard
+        if (data.user.role === 'Admin') {
+          router.push('/admin')
+        } else {
+          router.push('/dashboard')
+        }
       } else {
         toast.error(data.message || 'Registration failed')
       }

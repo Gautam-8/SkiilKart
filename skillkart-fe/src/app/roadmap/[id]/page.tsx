@@ -69,6 +69,10 @@ export default function RoadmapViewer() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedWeek, setSelectedWeek] = useState(1)
+  const [loadingSteps, setLoadingSteps] = useState<Set<number>>(new Set())
+  const [loadingResources, setLoadingResources] = useState<Set<string>>(new Set())
+  const [changingWeek, setChangingWeek] = useState(false)
+  const [navigating, setNavigating] = useState(false)
 
   // Calculate personalized timeline
   const calculatePersonalizedTimeline = () => {
@@ -227,6 +231,11 @@ export default function RoadmapViewer() {
   const toggleStepCompletion = async (stepId: number) => {
     if (!roadmap) return
     
+    // Prevent multiple clicks on the same step
+    if (loadingSteps.has(stepId)) return
+    
+    setLoadingSteps(prev => new Set(prev).add(stepId))
+    
     try {
       const token = localStorage.getItem('token')
       const stepToUpdate = roadmap.steps?.find(step => step.id === stepId)
@@ -267,6 +276,67 @@ export default function RoadmapViewer() {
     } catch (error) {
       console.error('Error updating progress:', error)
       toast.error('Error updating progress')
+    } finally {
+      setLoadingSteps(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(stepId)
+        return newSet
+      })
+    }
+  }
+
+  const handleResourceClick = async (resource: any, stepId: number, resourceIndex: number) => {
+    const resourceKey = `${stepId}-${resourceIndex}`
+    
+    if (loadingResources.has(resourceKey)) return
+    
+    setLoadingResources(prev => new Set(prev).add(resourceKey))
+    
+    try {
+      // Simulate a brief loading state for better UX
+      await new Promise(resolve => setTimeout(resolve, 300))
+      
+      // Open resource in new tab
+      window.open(resource.url, '_blank')
+      
+      toast.success('Resource opened!')
+    } catch (error) {
+      toast.error('Failed to open resource')
+    } finally {
+      setLoadingResources(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(resourceKey)
+        return newSet
+      })
+    }
+  }
+
+  const handleWeekChange = async (weekNumber: number) => {
+    if (changingWeek || selectedWeek === weekNumber) return
+    
+    setChangingWeek(true)
+    
+    try {
+      // Simulate brief loading for smooth UX
+      await new Promise(resolve => setTimeout(resolve, 150))
+      setSelectedWeek(weekNumber)
+    } finally {
+      setChangingWeek(false)
+    }
+  }
+
+  const handleBackToDashboard = async () => {
+    if (navigating) return
+    
+    setNavigating(true)
+    
+    try {
+      // Brief loading state for better UX
+      await new Promise(resolve => setTimeout(resolve, 200))
+      router.push('/dashboard')
+    } finally {
+      // Note: This might not execute if navigation succeeds
+      setNavigating(false)
     }
   }
 
@@ -295,7 +365,17 @@ export default function RoadmapViewer() {
         <div className="text-center">
           <h1 className="text-2xl font-bold text-white mb-4">Error</h1>
           <p className="text-gray-400 mb-4">{error || 'Roadmap not found'}</p>
-          <Button onClick={() => router.push('/dashboard')} className="bg-blue-600 hover:bg-blue-700">
+          <Button 
+            onClick={handleBackToDashboard} 
+            disabled={navigating}
+            className={`
+              bg-blue-600 hover:bg-blue-700 transition-all duration-200
+              ${navigating ? 'opacity-50 cursor-not-allowed' : ''}
+            `}
+          >
+            {navigating ? (
+              <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+            ) : null}
             Back to Dashboard
           </Button>
         </div>
@@ -317,10 +397,18 @@ export default function RoadmapViewer() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => router.push('/dashboard')}
-                className="text-gray-300 border-gray-600 hover:bg-gray-700"
+                onClick={handleBackToDashboard}
+                disabled={navigating}
+                className={`
+                  text-gray-300 border-gray-600 hover:bg-gray-700 transition-all duration-200
+                  ${navigating ? 'opacity-50 cursor-not-allowed' : ''}
+                `}
               >
-                <ArrowLeft className="h-4 w-4 mr-2" />
+                {navigating ? (
+                  <div className="h-4 w-4 border-2 border-gray-300 border-t-transparent rounded-full animate-spin mr-2" />
+                ) : (
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                )}
                 Back to Dashboard
               </Button>
               <div className="w-8 h-8 bg-blue-600/20 rounded-lg flex items-center justify-center">
@@ -405,14 +493,14 @@ export default function RoadmapViewer() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Left Section: Week Navigation */}
           <div className="lg:col-span-1">
-            <Card className="bg-gray-800/30 border-gray-700/30 backdrop-blur-sm">
+            <Card className="bg-gray-800/30 border-gray-700/30 backdrop-blur-sm h-[600px] flex flex-col">
               <CardHeader>
                 <CardTitle className="text-white flex items-center">
                   <Calendar className="h-5 w-5 mr-2 text-purple-400" />
                   Weeks Span
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 flex-1 overflow-y-auto scrollbar-modern">
                 {(() => {
                   const { stepsWithWeeks } = calculateWeeksAndSteps()
                   
@@ -499,12 +587,11 @@ export default function RoadmapViewer() {
                           {steps.map((step, stepIndex) => (
                             <button
                               key={step.id}
-                              onClick={() => {
-                                // Set selected week to the first week of this step
-                                setSelectedWeek(step.weekNumbers?.[0] || 1)
-                              }}
+                              onClick={() => handleWeekChange(step.weekNumbers?.[0] || 1)}
+                              disabled={changingWeek}
                               className={`
-                                w-full text-left p-2 rounded text-xs transition-colors
+                                w-full text-left p-2 rounded text-xs transition-all duration-200
+                                ${changingWeek ? 'opacity-50 cursor-not-allowed' : ''}
                                 ${step.completed 
                                   ? 'bg-green-600/20 text-green-300' 
                                   : 'bg-gray-600/20 text-gray-300 hover:bg-gray-600/30'
@@ -552,8 +639,15 @@ export default function RoadmapViewer() {
             </Card>
 
             {/* Steps for Current Week */}
-            <div className="space-y-6">
-              {currentWeekSteps.length === 0 ? (
+            <div className="h-[500px] overflow-y-auto scrollbar-modern space-y-6 pr-2">
+              {changingWeek ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400 mx-auto mb-4"></div>
+                    <p className="text-gray-400">Loading week content...</p>
+                  </div>
+                </div>
+              ) : currentWeekSteps.length === 0 ? (
                 <Card className="bg-gray-800/50 border-gray-700/50 backdrop-blur-sm">
                   <CardContent className="py-12 text-center">
                     <Calendar className="h-12 w-12 text-gray-600 mx-auto mb-4" />
@@ -577,9 +671,18 @@ export default function RoadmapViewer() {
                       <div className="flex items-start space-x-4">
                         <button
                           onClick={() => toggleStepCompletion(step.id)}
-                          className="mt-1 hover:scale-110 transition-transform"
+                          disabled={loadingSteps.has(step.id)}
+                          className={`
+                            mt-1 transition-all duration-200
+                            ${loadingSteps.has(step.id) 
+                              ? 'opacity-50 cursor-not-allowed' 
+                              : 'hover:scale-110'
+                            }
+                          `}
                         >
-                          {step.completed ? (
+                          {loadingSteps.has(step.id) ? (
+                            <div className="h-6 w-6 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                          ) : step.completed ? (
                             <CheckCircle2 className="h-6 w-6 text-green-400" />
                           ) : (
                             <Circle className="h-6 w-6 text-gray-400 hover:text-blue-400 transition-colors" />
@@ -622,17 +725,31 @@ export default function RoadmapViewer() {
                             <div className="space-y-2">
                               <p className="text-sm font-medium text-gray-400 uppercase tracking-wide">Resources</p>
                               <div className="space-y-2">
-                                {step.resources.map((resource, resourceIndex) => (
-                                  <Button
-                                    key={resourceIndex}
-                                    variant="outline"
-                                    size="sm"
-                                    className="text-blue-400 border-blue-500/30 hover:bg-blue-500/10"
-                                  >
-                                    <PlayCircle className="h-4 w-4 mr-2" />
-                                    {resource.title}
-                                  </Button>
-                                ))}
+                                {step.resources.map((resource, resourceIndex) => {
+                                  const resourceKey = `${step.id}-${resourceIndex}`
+                                  const isLoadingResource = loadingResources.has(resourceKey)
+                                  
+                                  return (
+                                    <Button
+                                      key={resourceIndex}
+                                      variant="outline"
+                                      size="sm"
+                                      disabled={isLoadingResource}
+                                      className={`
+                                        text-blue-400 border-blue-500/30 hover:bg-blue-500/10 transition-all duration-200
+                                        ${isLoadingResource ? 'opacity-50 cursor-not-allowed' : ''}
+                                      `}
+                                      onClick={() => handleResourceClick(resource, step.id, resourceIndex)}
+                                    >
+                                      {isLoadingResource ? (
+                                        <div className="h-4 w-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin mr-2" />
+                                      ) : (
+                                        <PlayCircle className="h-4 w-4 mr-2" />
+                                      )}
+                                      {resource.title}
+                                    </Button>
+                                  )
+                                })}
                               </div>
                             </div>
                           )}
