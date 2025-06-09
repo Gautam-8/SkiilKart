@@ -290,6 +290,18 @@ export default function RoadmapViewer() {
     
     if (loadingResources.has(resourceKey)) return
     
+    // Check for placeholder "coming soon" URLs
+    const isComingSoon = !resource.url || 
+                        resource.url.trim() === '' || 
+                        resource.url === '#' || 
+                        resource.url.toLowerCase().includes('coming-soon') ||
+                        resource.url === 'https://coming-soon.placeholder'
+    
+    if (isComingSoon) {
+      toast.info('This resource is coming soon! 🚀')
+      return
+    }
+    
     setLoadingResources(prev => new Set(prev).add(resourceKey))
     
     try {
@@ -721,13 +733,19 @@ export default function RoadmapViewer() {
                             </div>
                           )}
                           
-                          {step.resources && step.resources.length > 0 && (
+                          <div className="space-y-2">
+                            <p className="text-sm font-medium text-gray-400 uppercase tracking-wide">Resources</p>
                             <div className="space-y-2">
-                              <p className="text-sm font-medium text-gray-400 uppercase tracking-wide">Resources</p>
-                              <div className="space-y-2">
-                                {step.resources.map((resource, resourceIndex) => {
+                              {step.resources && step.resources.length > 0 ? (
+                                step.resources.map((resource, resourceIndex) => {
                                   const resourceKey = `${step.id}-${resourceIndex}`
                                   const isLoadingResource = loadingResources.has(resourceKey)
+                                  const isComingSoon = !resource.url || 
+                                                      resource.url.trim() === '' || 
+                                                      resource.url === '#' || 
+                                                      resource.url.toLowerCase().includes('coming-soon') ||
+                                                      resource.url === 'https://coming-soon.placeholder'
+                                  const hasUrl = !isComingSoon
                                   
                                   return (
                                     <Button
@@ -736,23 +754,42 @@ export default function RoadmapViewer() {
                                       size="sm"
                                       disabled={isLoadingResource}
                                       className={`
-                                        text-blue-400 border-blue-500/30 hover:bg-blue-500/10 transition-all duration-200
+                                        transition-all duration-200
+                                        ${hasUrl 
+                                          ? 'text-blue-400 border-blue-500/30 hover:bg-blue-500/10' 
+                                          : 'text-gray-400 border-gray-500/30 hover:bg-gray-500/10'
+                                        }
                                         ${isLoadingResource ? 'opacity-50 cursor-not-allowed' : ''}
                                       `}
                                       onClick={() => handleResourceClick(resource, step.id, resourceIndex)}
                                     >
                                       {isLoadingResource ? (
                                         <div className="h-4 w-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin mr-2" />
-                                      ) : (
+                                      ) : hasUrl ? (
                                         <PlayCircle className="h-4 w-4 mr-2" />
+                                      ) : (
+                                        <Clock className="h-4 w-4 mr-2" />
                                       )}
                                       {resource.title}
+                                      {!hasUrl && (
+                                        <span className="ml-2 text-xs bg-yellow-600/20 text-yellow-400 px-2 py-0.5 rounded-full">
+                                          Coming Soon
+                                        </span>
+                                      )}
                                     </Button>
                                   )
-                                })}
-                              </div>
+                                })
+                              ) : (
+                                <div className="flex items-center p-3 bg-gray-700/20 border border-gray-600/20 rounded-lg">
+                                  <Clock className="h-4 w-4 mr-2 text-gray-400" />
+                                  <span className="text-gray-300 text-sm">Resources for this step are coming soon!</span>
+                                  <span className="ml-2 text-xs bg-yellow-600/20 text-yellow-400 px-2 py-0.5 rounded-full">
+                                    Coming Soon
+                                  </span>
+                                </div>
+                              )}
                             </div>
-                          )}
+                          </div>
                         </div>
                       </div>
                     </CardContent>

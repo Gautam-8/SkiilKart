@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Dialog, DialogOverlay, DialogPortal, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Video, FileText, HelpCircle, Clock, X, Users, BookOpen, Target } from 'lucide-react'
+import { Video, FileText, HelpCircle, Clock, X, Users, BookOpen, Target, PlayCircle } from 'lucide-react'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
 
 interface RoadmapStep {
@@ -14,6 +14,12 @@ interface RoadmapStep {
   type: string
   description?: string
   estimatedHours?: number
+  resources?: Array<{
+    id: number
+    title: string
+    url: string
+    type: 'Video' | 'Blog' | 'Quiz'
+  }>
 }
 
 interface Roadmap {
@@ -170,6 +176,27 @@ export function EnhancedRoadmapModal({ open, onClose, roadmap, loading }: Enhanc
                             <p className="text-gray-400 text-sm mt-2 leading-relaxed">
                               {step.description}
                             </p>
+                          )}
+                          
+                          {/* Resources Section */}
+                          {step.resources && step.resources.length > 0 && (
+                            <div className="mt-3">
+                              <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">Resources</p>
+                              <div className="space-y-2">
+                                {step.resources.map((resource) => (
+                                  <Button
+                                    key={resource.id}
+                                    variant="outline"
+                                    size="sm"
+                                    className="text-blue-400 border-blue-500/30 hover:bg-blue-500/10 transition-all duration-200 w-full justify-start"
+                                    onClick={() => window.open(resource.url, '_blank')}
+                                  >
+                                    <PlayCircle className="h-4 w-4 mr-2" />
+                                    {resource.title}
+                                  </Button>
+                                ))}
+                              </div>
+                            </div>
                           )}
                         </div>
                       </div>

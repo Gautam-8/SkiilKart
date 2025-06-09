@@ -32,7 +32,7 @@ export class RoadmapsService {
   // GET /roadmaps - Return all roadmaps from database
   async getAllRoadmaps() {
     return await this.roadmapRepository.find({
-      relations: ['steps']
+      relations: ['steps', 'steps.resources']
     });
   }
 
@@ -41,7 +41,7 @@ export class RoadmapsService {
     
     const roadmap = await this.roadmapRepository.findOne({
       where: { id },
-      relations: ['steps']
+      relations: ['steps', 'steps.resources']
     });
 
     if (!roadmap) {
@@ -55,6 +55,7 @@ export class RoadmapsService {
   async getRoadmapSteps(roadmapId: number) {
     const steps = await this.roadmapStepRepository.find({
       where: { roadmapId },
+      relations: ['resources'],
       order: { id: 'ASC' }
     });
     
